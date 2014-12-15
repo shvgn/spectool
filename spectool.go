@@ -9,6 +9,7 @@ package main
 import (
 	"flag"
 	"fmt"
+
 	"github.com/shvgn/spectrum"
 	// "strconv"
 	// "strings"
@@ -28,7 +29,8 @@ func conv_evnm(x float64) float64 {
 func main() {
 
 	// --------------------------------------------------------------------------
-	// We start with flags. All other arguments are supposed to be text files with spectra data
+	// We start with flags. All other arguments are supposed to be text files with
+	// spectra data
 
 	pleSet := flag.String("ple", "", "This is set of wavelength of energy walues (in nm or ev) divided by commas for PLE extraction e.g. -ple=287.5,288,288.5")
 	// averPtr := flag.Int("aver", 0, "Specifies number of neighbour values to take into account. The exact or neares value is taken if aver=0, if e.g. aver=2 than two more values are taken from both sides if possible resulting in averaging of 5 values.")
@@ -116,7 +118,7 @@ Interface
 	spectool -mean file1 file2 file3 ...
 	spectool -stats file1 file2 file3 ...
 
-	spectool -stats -ple -nm2ev file1 file2 file3 ...
+	spectool -stats -ple 360 360.5 362 [...] -nm2ev file1 file2 file3 ...
 		or spectool -stats -ple=all -nm2ev file1 file2 file3 ...
 
 
