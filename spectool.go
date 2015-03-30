@@ -1,24 +1,27 @@
 // The code is provided "as is" without any warranty and shit.
-// You are free do anything you want with it.
+// You are free to copy, use and redistribute the code as you wish.
 //
-// Evgenii Shevchenko a.k.a @shvgn
-// 2014
+// Evgenii Shevchenko
+// shvgn@protonmail.ch
+// 2015
 
 package main
 
 import (
 	"flag"
 	"fmt"
+	"math"
 
 	"github.com/shvgn/spectrum"
-	// "strconv"
-	// "strings"
 )
 
 const (
-	EVNM           = 1239.84193        // Coefficient equal to nm*eV
-	MAX_ENERGY     = 8.0               // electron-volts
-	MIN_WAVELENGTH = EVNM / MAX_ENERGY // nanometers
+	LIGHT_SPEED         float64 = 299792458                            // meters per second
+	PLANCK_CONSTANT     float64 = 4.135667516e-15                      // electronvolts * second, h
+	PLANCK_CONSTANT_BAR float64 = 4.135667516e-15 / 2 / math.Pi        // electronvolts * second, h/2pi
+	EVNM                float64 = PLANCK_CONSTANT * 1e+9 * LIGHT_SPEED // factor of nanometers and electron-volts
+	MAX_ENERGY          float64 = 10.0                                 // electron-volts
+	MIN_WAVELENGTH      float64 = EVNM / MAX_ENERGY                    // nanometers
 )
 
 // Converter from nanometers to electron-volts and in reverse
@@ -32,8 +35,11 @@ func main() {
 	// We start with flags. All other arguments are supposed to be text files with
 	// spectra data
 
-	pleSet := flag.String("ple", "", "This is set of wavelength of energy walues (in nm or ev) divided by commas for PLE extraction e.g. -ple=287.5,288,288.5")
-	// averPtr := flag.Int("aver", 0, "Specifies number of neighbour values to take into account. The exact or neares value is taken if aver=0, if e.g. aver=2 than two more values are taken from both sides if possible resulting in averaging of 5 values.")
+	pleSet := flag.String("ple", "", "This is set of wavelength of energy walues (in nm or ev) divided by commas for PLE extraction e.g.  -ple=287.5,288,288.5")
+	// averPtr := flag.Int("aver", 0, "Specifies number of neighbour values to
+	// take into account. The exact or neares value is taken if aver=0, if e.g.
+	// aver=2 than two more values are taken from both sides if possible
+	// resulting in averaging of 5 values.")
 
 	nm2evPtr := flag.Bool("nm2ev", false, "Set this flag in order to convert X from nanometers to electron-volts")
 	ev2nmPtr := flag.Bool("ev2nm", false, "Set this flag in order to convert X from electron-volts to nanometers")
@@ -49,10 +55,12 @@ func main() {
 		// var specPtr *spectrum.Spectrum
 		specPtr, err := spectrum.SpectrumFromFile(filePath)
 		if err != nil {
-			fmt.Println("Cannot read spectrum from file", filePath+":", err.Error(), "- Skipping.")
+			fmt.Println("Cannot read spectrum from file", filePath+":",
+				err.Error(), "- Skipping.")
 			continue
 		}
-		specPtr.ReadFromFile(filePath)
+		// specPtr.ReadFromFile(filePath)
+		spectrum.ReadFromFile(filePath)
 		fmt.Println(specPtr)
 		spectra = append(spectra, specPtr)
 	}
@@ -107,6 +115,23 @@ func main() {
 
 Interface
 
+Tasks:
+
+A specrum file is a two-column ASCII file with numbers, the columns being separated by speca characters such
+as multiple whitespaces or tabs. Headers are allowed. If a header has colon ':', the colon is considered to be
+the delimeter, otherwise it will be first space character met after the first word. Comments must start with
+#.
+
+
+HeaderName: Header Value with a bunch of whitespaces
+Header Name 2: And this must work, too
+Header Value is now from the second word and towards the end
+1.000000 4.3123353
+1.010000    12434,53432
+
+...
+
+
 1. specify operation with the special key?
 
 	spectool -op=nm2ev file1 file2 file3 ...
@@ -121,6 +146,7 @@ Interface
 	spectool -stats -ple 360 360.5 362 [...] -nm2ev file1 file2 file3 ...
 		or spectool -stats -ple=all -nm2ev file1 file2 file3 ...
 
+	spectool -nm2ev file1 fil32 file3 -noise -stats -from=235 -to=310 -xshift=1.23 -yshift=40 -mul -div -add -sub
 
 
 *************************************************************************/
