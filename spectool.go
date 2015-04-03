@@ -1,7 +1,7 @@
 // The code is provided "as is" without any warranty and shit.
-// You are free to copy, use and redistribute the code as you wish.
+// You are free to copy, use and redistribute the code in any way you wish.
 //
-// Evgenii Shevchenko
+// Evgeny Shevchenko
 // shvgn@protonmail.ch
 // 2015
 
@@ -10,18 +10,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math"
 
 	"github.com/shvgn/spectrum"
 )
 
 const (
-	LIGHT_SPEED         float64 = 299792458                            // meters per second
-	PLANCK_CONSTANT     float64 = 4.135667516e-15                      // electronvolts * second, h
-	PLANCK_CONSTANT_BAR float64 = 4.135667516e-15 / 2 / math.Pi        // electronvolts * second, h/2pi
-	EVNM                float64 = PLANCK_CONSTANT * 1e+9 * LIGHT_SPEED // factor of nanometers and electron-volts
-	MAX_ENERGY          float64 = 10.0                                 // electron-volts
-	MIN_WAVELENGTH      float64 = EVNM / MAX_ENERGY                    // nanometers
+	LIGHT_SPEED     float64 = 299792458                            // meters per second
+	PLANCK_CONSTANT float64 = 4.135667516e-15                      // electronvolts * second, h
+	EVNM            float64 = PLANCK_CONSTANT * 1e+9 * LIGHT_SPEED // factor of nanometers and electron-volts
+	MAX_ENERGY      float64 = 10.0                                 // electron-volts
+	MIN_WAVELENGTH  float64 = EVNM / MAX_ENERGY                    // nanometers
 )
 
 // Converter from nanometers to electron-volts and in reverse
@@ -31,38 +29,23 @@ func conv_evnm(x float64) float64 {
 
 func main() {
 
-	// --------------------------------------------------------------------------
-	// We start with flags. All other arguments are supposed to be text files with
-	// spectra data
-
-	pleSet := flag.String("ple", "", "This is set of wavelength of energy walues (in nm or ev) divided by commas for PLE extraction e.g.  -ple=287.5,288,288.5")
-	// averPtr := flag.Int("aver", 0, "Specifies number of neighbour values to
-	// take into account. The exact or neares value is taken if aver=0, if e.g.
-	// aver=2 than two more values are taken from both sides if possible
-	// resulting in averaging of 5 values.")
-
+	// pleSet := flag.String("ple", "", "This is set of wavelength or energy walues: -ple=287.5,288,288.5")
 	nm2evPtr := flag.Bool("nm2ev", false, "Set this flag in order to convert X from nanometers to electron-volts")
 	ev2nmPtr := flag.Bool("ev2nm", false, "Set this flag in order to convert X from electron-volts to nanometers")
 
 	flag.Parse()
 
-	// --------------------------------------------------------------------------
 	// Filling the data
-	spectra := make([]*spectrum.Spectrum, 1)
-
-	for _, filePath := range flag.Args() {
-		// specPtr := spectrum.NewSpectrum()
-		// var specPtr *spectrum.Spectrum
-		specPtr, err := spectrum.SpectrumFromFile(filePath)
+	spectra := make([]*spectrum.Spectrum, len(flag.Args()))
+	for _, fname := range flag.Args() {
+		s, err := spectrum.SpectrumFromFile(fname)
 		if err != nil {
-			fmt.Println("Cannot read spectrum from file", filePath+":",
+			fmt.Println("Cannot read spectrum from file", fname+":",
 				err.Error(), "- Skipping.")
 			continue
 		}
-		// specPtr.ReadFromFile(filePath)
-		spectrum.ReadFromFile(filePath)
-		fmt.Println(specPtr)
-		spectra = append(spectra, specPtr)
+		fmt.Println(s)
+		spectra = append(spectra, s)
 	}
 
 	// --------------------------------------------------------------------------
@@ -104,7 +87,7 @@ func main() {
 	// --------------------------------------------------------------------------
 
 	// fmt.Println("Number of values to average: ", *averPtr)
-	fmt.Println("PLE detection values passed: ", *pleSet)
+	// fmt.Println("PLE detection values passed: ", *pleSet)
 	fmt.Println("nm to eV: ", *nm2evPtr)
 	fmt.Println("eV to nm: ", *ev2nmPtr)
 	// fmt.Println("PLE detection values parsed: ", pleVals)
@@ -117,10 +100,11 @@ Interface
 
 Tasks:
 
-A specrum file is a two-column ASCII file with numbers, the columns being separated by speca characters such
-as multiple whitespaces or tabs. Headers are allowed. If a header has colon ':', the colon is considered to be
-the delimeter, otherwise it will be first space character met after the first word. Comments must start with
-#.
+A specrum file is a two-column ASCII file with numbers, the columns being
+separated by space characters such as multiple whitespaces or tabs (TSV file).
+Headers are allowed. If a header has colon ':', the colon is considered to be
+the delimeter, otherwise it will be first space character met after the first
+word. Comments must start with #.
 
 
 HeaderName: Header Value with a bunch of whitespaces
