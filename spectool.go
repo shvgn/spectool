@@ -10,51 +10,61 @@ package main
 import (
 	"flag"
 	"fmt"
-
-	"github.com/shvgn/spectrum"
+	"log"
 )
-
-const (
-	LIGHT_SPEED     float64 = 299792458                            // meters per second
-	PLANCK_CONSTANT float64 = 4.135667516e-15                      // electronvolts * second, h
-	EVNM            float64 = PLANCK_CONSTANT * 1e+9 * LIGHT_SPEED // factor of nanometers and electron-volts
-	MAX_ENERGY      float64 = 10.0                                 // electron-volts
-	MIN_WAVELENGTH  float64 = EVNM / MAX_ENERGY                    // nanometers
-)
-
-// Converter from nanometers to electron-volts and in reverse
-func conv_evnm(x float64) float64 {
-	return EVNM / x
-}
 
 func main() {
 
-	// pleSet := flag.String("ple", "", "This is set of wavelength or energy walues: -ple=287.5,288,288.5")
-	nm2evPtr := flag.Bool("nm2ev", false, "Set this flag in order to convert X from nanometers to electron-volts")
-	ev2nmPtr := flag.Bool("ev2nm", false, "Set this flag in order to convert X from electron-volts to nanometers")
-
+	nm2EvFlag := flag.Bool("nm2ev", false, "Convert X from nanometers to electron-volts")
+	ev2NmFlag := flag.Bool("ev2nm", false, "Convert X from electron-volts to nanometers")
+	// inFmtFlag := flag.String("if", "ascii", "ascii|tsv|csv\tFormat of the input file")
+	// outFmtFlag := flag.String("of", "ascii", "ascii|tsv|csv\tFormat of the output file")
+	// pleFlag := flag.String("ple", "", "This is set of wavelength or energy walues: -ple=287.5,288,288.5")
 	flag.Parse()
 
+	// var parseSpecFunc func(io.Reader, int, int) (*spectrum.Spectrum, error)
+	// switch *inFmtFlag {
+	// case "tsv":
+	// 	parseSpecFunc = spectrum.ReadFromTSV
+	// case "csv":
+	// 	parseSpecFunc = nil
+	// case "ascii":
+	// 	parseSpecFunc = nil
+	// }
+	//
+	// var saveSpecFunc func(io.Writer) error
+	// switch *outFmtFlag {
+	// case "tsv":
+	// 	saveSpecFunc = nil
+	// case "csv":
+	// 	saveSpecFunc = nil
+	// case "ascii":
+	// 	saveSpecFunc = nil
+	// }
+
 	// Filling the data
-	spectra := make([]*spectrum.Spectrum, len(flag.Args()))
+	spectra := make([]*SpectrumWrapper, len(flag.Args()))
 	for _, fname := range flag.Args() {
-		s, err := spectrum.SpectrumFromFile(fname)
+		sw, err := NewSpecWrapper(fname)
 		if err != nil {
-			fmt.Println("Cannot read spectrum from file", fname+":",
-				err.Error(), "- Skipping.")
+			log.Println("Cannot read spectrum from file", fname+":", err.Error(), "- Skipping.")
 			continue
 		}
-		fmt.Println(s)
-		spectra = append(spectra, s)
+		fmt.Println(sw)
+		spectra = append(spectra, sw)
 	}
 
-	// --------------------------------------------------------------------------
 	// Processing
-	// for _, sp := range spectra {
-	// if flag1 do thing1
-	// if flag2 do thing2
-	// and so on
-	// }
+	for _, sw := range spectra {
+		if *nm2EvFlag {
+			sw.s.ModifyX(ensureEv)
+			sw.fname = addPreSuffix("ev")
+		} else if *ev2NmFlag {
+			sw.s.ModifyX(ensureNm)
+			sw.fname = addPreSuffix("nm")
+		}
+
+	}
 
 	// --------------------------------------------------------------------------
 	// Take PLE values into account
@@ -88,8 +98,8 @@ func main() {
 
 	// fmt.Println("Number of values to average: ", *averPtr)
 	// fmt.Println("PLE detection values passed: ", *pleSet)
-	fmt.Println("nm to eV: ", *nm2evPtr)
-	fmt.Println("eV to nm: ", *ev2nmPtr)
+	fmt.Println("nm to eV: ", *nm2EvFlag)
+	fmt.Println("eV to nm: ", *ev2NmFlag)
 	// fmt.Println("PLE detection values parsed: ", pleVals)
 	fmt.Println("Other cmd arguments: ", flag.Args())
 }
