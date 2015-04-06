@@ -8,6 +8,8 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"path/filepath"
 
 	"github.com/shvgn/spectrum"
@@ -31,6 +33,16 @@ func NewSpecWrapper(fpath string, cols ...int) (*SpectrumWrapper, error) {
 	dir, fname := filepath.Split(fpath)
 	sw := &SpectrumWrapper{s: s, fname: fname, dir: dir}
 	return sw, nil
+}
+
+// Write the data into a new corresponding file
+func (sw *SpectrumWrapper) String() string {
+	var buf bytes.Buffer
+	buf.WriteString(fmt.Sprintf("Directory: %s\n", sw.dir))
+	buf.WriteString(fmt.Sprintf("Filename: %s\n", sw.fname))
+	buf.WriteString(sw.s.String())
+	buf.WriteString("\n")
+	return buf.String()
 }
 
 // Write the data into a new corresponding file

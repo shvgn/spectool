@@ -10,18 +10,20 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 )
 
 func main() {
 
 	// Modificating flags
-	nm2EvFlag := flag.Bool("nm2ev", false, "Convert X from nanometers to electron-volts")
-	ev2NmFlag := flag.Bool("ev2nm", false, "Convert X from electron-volts to nanometers")
+	nm2EvFlag := flag.Bool("ev", false, "Convert X from nanometers to electron-volts")
+	ev2NmFlag := flag.Bool("nm", false, "Convert X from electron-volts to nanometers")
 	addFlag := flag.String("add", "", "Add a number or a spectrum")
 	subFlag := flag.String("sub", "", "Subtract a number or a spectrum")
 	mulFlag := flag.String("mul", "", "Multiply by a number or a spectrum")
 	divFlag := flag.String("div", "", "Divide by a number or a spectrum")
+	meanFlag := flag.Bool("mean", false, "Mean spectrum from all the passed data")
+	smoothFlag := flag.String("smooth", "no",
+		"[ws,po]\tSmooth data with optionally specified both window size and polynome order")
 
 	// Not modificating flags
 	statsFlag := flag.Bool("s", false, "Collect statistics on the data")
@@ -63,10 +65,9 @@ func main() {
 	for _, fname := range flag.Args() {
 		sw, err := NewSpecWrapper(fname)
 		if err != nil {
-			log.Println("Cannot read spectrum from file", fname+":", err.Error(), "- Skipping.")
+			fmt.Println(err)
 			continue
 		}
-		fmt.Println(sw)
 		originals = append(originals, sw)
 		if modificationsRequired {
 			modified = append(modified, sw)
@@ -77,16 +78,21 @@ func main() {
 	for _, sw := range modified {
 		if *nm2EvFlag {
 			sw.s.ModifyX(ensureEv)
-			sw.fname = addPreSuffix("ev")
+			sw.fname = addPreSuffix(sw.fname, "ev")
 		} else if *ev2NmFlag {
 			sw.s.ModifyX(ensureNm)
-			sw.fname = addPreSuffix("nm")
+			sw.fname = addPreSuffix(sw.fname, "nm")
+		}
+		if *smoothFlag != "no" {
+			// SMOOTH THEM ALL!!!1
+		}
+		if *meanFlag {
+			// MEAN THEM ALL
 		}
 		if *statsFlag {
 			// Calculate stats
-			log.Println(sw.s)
+			fmt.Println(stats(sw.s))
 		}
-
 	}
 
 	// --------------------------------------------------------------------------
@@ -135,9 +141,9 @@ Tasks:
 
 A specrum file is a two-column ASCII file with numbers, the columns being
 separated by space characters such as multiple whitespaces or tabs (TSV file).
-Headers are allowed. If a header has colon ':', the colon is considered to be
-the delimeter, otherwise it will be first space character met after the first
-word. Comments must start with #.
+Headers are allowed. For an arbitrary ASCII file if a header has colon ':', the
+colon is considered to be the delimeter, otherwise it will be first space
+character met after the first word.
 
 
 HeaderName: Header Value with a bunch of whitespaces
@@ -147,13 +153,6 @@ Header Value is now from the second word and towards the end
 1.010000    12434,53432
 
 ...
-
-
-1. specify operation with the special key?
-
-	spectool -op=nm2ev file1 file2 file3 ...
-
-2. seaprate key for each operation
 
 	spectool -nm2ev file1 file2 file3 ...
 	spectool -ple file1 file2 file3 ...

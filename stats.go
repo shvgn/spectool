@@ -31,6 +31,6 @@ func stats(s *spectrum.Spectrum) *Stats {
 	st.area = s.Area()
 	st.maxpos, st.maxheight = s.MaxY()
 	st.fwhm = s.FWHM(st.maxpos)
-	notImplemented() // FIXME
+	// notImplemented() // FIXME
 	return st
 }
