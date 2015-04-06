@@ -15,13 +15,28 @@ import (
 
 func main() {
 
+	// Modificating flags
 	nm2EvFlag := flag.Bool("nm2ev", false, "Convert X from nanometers to electron-volts")
 	ev2NmFlag := flag.Bool("ev2nm", false, "Convert X from electron-volts to nanometers")
+	addFlag := flag.String("add", "", "Add a number or a spectrum")
+	subFlag := flag.String("sub", "", "Subtract a number or a spectrum")
+	mulFlag := flag.String("mul", "", "Multiply by a number or a spectrum")
+	divFlag := flag.String("div", "", "Divide by a number or a spectrum")
+
+	// Not modificating flags
+	statsFlag := flag.Bool("s", false, "Collect statistics on the data")
 	// inFmtFlag := flag.String("if", "ascii", "ascii|tsv|csv\tFormat of the input file")
 	// outFmtFlag := flag.String("of", "ascii", "ascii|tsv|csv\tFormat of the output file")
 	// pleFlag := flag.String("ple", "", "This is set of wavelength or energy walues: -ple=287.5,288,288.5")
+
 	flag.Parse()
 
+	var modificationsRequired = false
+	if *nm2EvFlag || *ev2NmFlag ||
+		*addFlag != "" || *subFlag != "" ||
+		*mulFlag != "" || *divFlag != "" {
+		modificationsRequired = true
+	}
 	// var parseSpecFunc func(io.Reader, int, int) (*spectrum.Spectrum, error)
 	// switch *inFmtFlag {
 	// case "tsv":
@@ -43,7 +58,8 @@ func main() {
 	// }
 
 	// Filling the data
-	spectra := make([]*SpectrumWrapper, len(flag.Args()))
+	originals := make([]*SpectrumWrapper, len(flag.Args()))
+	var modified []*SpectrumWrapper
 	for _, fname := range flag.Args() {
 		sw, err := NewSpecWrapper(fname)
 		if err != nil {
@@ -51,17 +67,24 @@ func main() {
 			continue
 		}
 		fmt.Println(sw)
-		spectra = append(spectra, sw)
+		originals = append(originals, sw)
+		if modificationsRequired {
+			modified = append(modified, sw)
+		}
 	}
 
 	// Processing
-	for _, sw := range spectra {
+	for _, sw := range modified {
 		if *nm2EvFlag {
 			sw.s.ModifyX(ensureEv)
 			sw.fname = addPreSuffix("ev")
 		} else if *ev2NmFlag {
 			sw.s.ModifyX(ensureNm)
 			sw.fname = addPreSuffix("nm")
+		}
+		if *statsFlag {
+			// Calculate stats
+			log.Println(sw.s)
 		}
 
 	}
