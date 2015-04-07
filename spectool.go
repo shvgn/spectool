@@ -27,6 +27,9 @@ func main() {
 
 	// Not modificating flags
 	statsFlag := flag.Bool("s", false, "Collect statistics on the data")
+	colXFlag := flag.Int("xcol", 1, "Set number of the X column")
+	colYFlag := flag.Int("ycol", 2, "Set number of the Y column")
+	// colsFlag := flag.String("cols", "1,2", "Set numbers of X and Y columns")
 	// inFmtFlag := flag.String("if", "ascii", "ascii|tsv|csv\tFormat of the input file")
 	// outFmtFlag := flag.String("of", "ascii", "ascii|tsv|csv\tFormat of the output file")
 	// pleFlag := flag.String("ple", "", "This is set of wavelength or energy walues: -ple=287.5,288,288.5")
@@ -63,8 +66,9 @@ func main() {
 	originals := make([]*SpectrumWrapper, len(flag.Args()))
 	var modified []*SpectrumWrapper
 	for _, fname := range flag.Args() {
-		sw, err := NewSpecWrapper(fname)
+		sw, err := NewSpecWrapper(fname, *colXFlag, *colYFlag)
 		if err != nil {
+			fmt.Print("Error processing file " + fname + ": ")
 			fmt.Println(err)
 			continue
 		}
@@ -127,10 +131,10 @@ func main() {
 
 	// fmt.Println("Number of values to average: ", *averPtr)
 	// fmt.Println("PLE detection values passed: ", *pleSet)
-	fmt.Println("nm to eV: ", *nm2EvFlag)
-	fmt.Println("eV to nm: ", *ev2NmFlag)
+	// fmt.Println("nm to eV: ", *nm2EvFlag)
+	// fmt.Println("eV to nm: ", *ev2NmFlag)
 	// fmt.Println("PLE detection values parsed: ", pleVals)
-	fmt.Println("Other cmd arguments: ", flag.Args())
+	// fmt.Println("Other cmd arguments: ", flag.Args())
 }
 
 /************************************************************************
