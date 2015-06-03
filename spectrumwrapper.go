@@ -35,7 +35,7 @@ func NewSpecWrapper(fpath string, cols ...int) (*SpectrumWrapper, error) {
 	return sw, nil
 }
 
-// Write the data into a new corresponding file
+// String representation
 func (sw *SpectrumWrapper) String() string {
 	var buf bytes.Buffer
 	buf.WriteString(fmt.Sprintf("Directory: %s\n", sw.dir))
