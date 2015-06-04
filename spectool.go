@@ -221,7 +221,8 @@ func main() {
 
 	// Directory to save in
 	if *outDirFlag != "" {
-		err := os.MkdirAll(*outDirFlag, 0755)
+		var perm os.FileMode = 0755
+		err := os.MkdirAll(*outDirFlag, perm)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -246,7 +247,6 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-
 	}
 
 	// --------------------------------------------------------------------------
