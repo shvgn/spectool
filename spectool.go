@@ -1,4 +1,3 @@
-// The code is provided "as is" without any warranty and shit.
 // You are free to copy, use and redistribute the code in any way you wish.
 //
 // Evgeny Shevchenko
@@ -63,26 +62,6 @@ func main() {
 	var modificationsRequired bool = *nm2EvFlag || *ev2NmFlag ||
 		*addFlag != "" || *subFlag != "" || *mulFlag != "" || *divFlag != ""
 
-	// var parseSpecFunc func(io.Reader, int, int) (*spectrum.Spectrum, error)
-	// switch *inFmtFlag {
-	// case "tsv":
-	// 	parseSpecFunc = spectrum.ReadFromTSV
-	// case "csv":
-	// 	parseSpecFunc = nil
-	// case "ascii":
-	// 	parseSpecFunc = nil
-	// }
-	//
-	// var saveSpecFunc func(io.Writer) error
-	// switch *outFmtFlag {
-	// case "tsv":
-	// 	saveSpecFunc = nil
-	// case "csv":
-	// 	saveSpecFunc = nil
-	// case "ascii":
-	// 	saveSpecFunc = nil
-	// }
-
 	// Filling the data
 	originals := make([]*SpectrumWrapper, len(flag.Args()))
 	var modified []*SpectrumWrapper
@@ -124,6 +103,9 @@ func main() {
 		*toFlag = ensureUnitsFunc(*toFlag)
 	}
 
+	if *fromFlag > *toFlag {
+		*fromFlag, *toFlag = *toFlag, *fromFlag
+	}
 	// Arithmetics to be done
 	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *spectrum.Spectrum
 	var err error
@@ -152,9 +134,11 @@ func main() {
 	for _, sw := range modified {
 		// Addition and subtracting of spectra should be done before noise calculation
 		if *addFlag != "" {
+			addSpectrum.ModifyX(ensureUnitsFunc)
 			sw.s.Add(addSpectrum)
 		}
 		if *subFlag != "" {
+			addSpectrum.ModifyX(ensureUnitsFunc)
 			sw.s.Subtract(subSpectrum)
 		}
 
@@ -179,9 +163,11 @@ func main() {
 		}
 
 		if *mulFlag != "" {
+			mulSpectrum.ModifyX(ensureUnitsFunc)
 			sw.s.Multiply(mulSpectrum)
 		}
 		if *divFlag != "" {
+			divSpectrum.ModifyX(ensureUnitsFunc)
 			sw.s.Divide(divSpectrum)
 		}
 

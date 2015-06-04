@@ -40,7 +40,11 @@ func NewSpecWrapper(fpath string, cols ...int) (*SpectrumWrapper, error) {
 // String representation
 func (sw *SpectrumWrapper) String() string {
 	var buf bytes.Buffer
-	buf.WriteString(fmt.Sprintf("Directory: %s\n", sw.dir))
+	if sw.dir == "" {
+		buf.WriteString(fmt.Sprintf("Directory: %s\n", "."))
+	} else {
+		buf.WriteString(fmt.Sprintf("Directory: %s\n", sw.dir))
+	}
 	buf.WriteString(fmt.Sprintf("Filename: %s\n", sw.fname))
 	buf.WriteString(sw.s.String())
 	buf.WriteString("\n")
