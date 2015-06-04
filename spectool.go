@@ -11,6 +11,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/shvgn/spectrum"
 )
@@ -19,40 +21,42 @@ func main() {
 
 	// Modificating flags
 	// X Units
-	nm2EvFlag := flag.Bool("ev", false, "Keep X in electron-volts")
-	ev2NmFlag := flag.Bool("nm", false, "Keep X in nanometers")
+	nm2EvFlag := flag.Bool("2ev", false, "Keep X in electron-volts")
+	ev2NmFlag := flag.Bool("2nm", false, "Keep X in nanometers")
 
 	// X cutting options
-	fromFlag := flag.Float64("from", -1.0, "X to start from")
-	toFlag := flag.Float64("to", -1.0, "X to end with")
+	fromFlag := flag.Float64("xfrom", -1.0, "X to start from")
+	toFlag := flag.Float64("xto", -1.0, "X to end with")
 
 	// Spectra arithmetic operations with numbers
-	addNumFlag := flag.Float64("addn", 0.0, "Add a number ")
-	subNumFlag := flag.Float64("subn", 0.0, "Subtract a number ")
-	mulNumFlag := flag.Float64("muln", 1.0, "Multiply by a number ")
-	divNumFlag := flag.Float64("divn", 1.0, "Divide by a number ")
+	addNumFlag := flag.Float64("nadd", 0.0, "Add a number ")
+	subNumFlag := flag.Float64("nsub", 0.0, "Subtract a number ")
+	mulNumFlag := flag.Float64("nmul", 1.0, "Multiply by a number ")
+	divNumFlag := flag.Float64("ndiv", 1.0, "Divide by a number ")
 
 	// Spectra operations with other spectra
-	addFlag := flag.String("add", "", "Add spectrum")
-	subFlag := flag.String("sub", "", "Subtract spectrum")
-	mulFlag := flag.String("mul", "", "Multiply by spectrum")
-	divFlag := flag.String("div", "", "Divide by spectrum")
+	addFlag := flag.String("spadd", "", "Add spectrum")
+	subFlag := flag.String("spsub", "", "Subtract spectrum")
+	mulFlag := flag.String("spmul", "", "Multiply by spectrum")
+	divFlag := flag.String("spdiv", "", "Divide by spectrum")
 
 	// Spectra metadata
-	noiseFlag := flag.Bool("noise", false, "(Not implemented) Subtract noise")
+	noiseFlag := flag.Bool("n", false, "Subtract noise")
 
 	meanFlag := flag.Bool("mean", false, "(Not implemented) Mean spectrum from all the passed data")
 	smoothFlag := flag.String("smooth", "",
 		"[ws,po]\t(Not implemented) Smooth data with optionally specified both window size and polynome order")
+	// pleFlag := flag.String("ple", "", "This is set of wavelength or energy walues: -ple=287.5,288,288.5")
 
 	// Non-modificating flags
 	statsFlag := flag.Bool("s", false, "(Not implemented) Collect statistics on the data")
-	colXFlag := flag.Int("xcol", 1, "Set number of the X column")
-	colYFlag := flag.Int("ycol", 2, "Set number of the Y column")
+	colXFlag := flag.Int("colx", 1, "Set number of the X column in passed data files")
+	colYFlag := flag.Int("coly", 2, "Set number of the Y column in passed data ASCII files")
 	// colsFlag := flag.String("cols", "1,2", "Set numbers of X and Y columns")
 	// inFmtFlag := flag.String("if", "ascii", "ascii|tsv|csv\tFormat of the input file")
-	// outFmtFlag := flag.String("of", "ascii", "ascii|tsv|csv\tFormat of the output file")
-	// pleFlag := flag.String("ple", "", "This is set of wavelength or energy walues: -ple=287.5,288,288.5")
+	outFmtFlag := flag.String("of", "ascii", "[ascii|tsv|csv]   Format of the output file")
+	outDirFlag := flag.String("od", "", "Directory for output files. If not specified new files are placed near original ones")
+	verboseFlag := flag.Bool("v", false, "Verbose the actions")
 
 	flag.Parse()
 
@@ -158,6 +162,9 @@ func main() {
 		if *noiseFlag {
 			n := sw.s.Noise()
 			sw.s.ModifyY(func(y float64) float64 { return y - n })
+			if *verboseFlag {
+				fmt.Printf("%s: Subtracted noise %f\n", sw.dir+sw.fname, n)
+			}
 		}
 		// Process the X units
 		if modifyUnits {
@@ -200,13 +207,46 @@ func main() {
 		}
 		if *statsFlag {
 			// Calculate stats
-			fmt.Println(stats(sw.s))
+			// fmt.Println(stats(sw.s))
 		}
 	}
 
 	// Saving
-	for _, sw := range modified {
-		sw.Write()
+	var results []*SpectrumWrapper
+	results = originals
+	if modificationsRequired {
+		fmt.Println("Modified results will be printed")
+		results = modified
+	}
+
+	// Directory to save in
+	if *outDirFlag != "" {
+		err := os.MkdirAll(*outDirFlag, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Output format
+	if *outFmtFlag == "" {
+		*outFmtFlag = "ascii"
+	}
+
+	for _, sw := range results {
+		var path string
+		var perm os.FileMode = 0644
+
+		if *outDirFlag != "" {
+			path = filepath.Join(*outDirFlag, sw.fname)
+		} else {
+			path = filepath.Join(sw.dir, sw.fname)
+		}
+
+		err := sw.WriteFile(path, *outFmtFlag, perm)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 	}
 
 	// --------------------------------------------------------------------------

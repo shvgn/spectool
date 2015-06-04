@@ -10,6 +10,8 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/shvgn/spectrum"
@@ -46,7 +48,14 @@ func (sw *SpectrumWrapper) String() string {
 }
 
 // Write the data into a new corresponding file
-func (sw *SpectrumWrapper) Write() {
-	notImplemented()
-	// writes the data sw.s to the file path sw.dir+sw.fname
+func (sw *SpectrumWrapper) WriteFile(path string, fmt string, perm os.FileMode) error {
+	var strFunc func() string
+	if fmt == "ascii" {
+		strFunc = sw.String
+	}
+	// if fmt == "tsv"     { strFunc = sw.TSVString }
+	// if fmt == "csv"     { strFunc = sw.CSVString }
+	// if fmt == "matlab"  { strFunc = sw.MATLABString }
+	// if fmt == "json"    { strFunc = sw.JSONString }
+	return ioutil.WriteFile(path, []byte(strFunc()), perm)
 }
