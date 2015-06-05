@@ -12,9 +12,17 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/shvgn/spectrum"
 )
+
+// Global for the verbosity control
+var verboseFlag bool
+
+// Message on an arithmetic operation
+func opMessage(op, value string) {
+	if verboseFlag {
+		fmt.Printf("  %s   %v\n", op, value)
+	}
+}
 
 func main() {
 
@@ -55,7 +63,8 @@ func main() {
 	// inFmtFlag := flag.String("if", "ascii", "ascii|tsv|csv\tFormat of the input file")
 	outFmtFlag := flag.String("of", "ascii", "[ascii|tsv|csv]   Format of the output file")
 	outDirFlag := flag.String("od", "", "Directory for output files. If not specified new files are placed near original ones")
-	verboseFlag := flag.Bool("v", false, "Verbose the actions")
+	// verboseFlag := flag.Bool("v", false, "Verbose the actions")
+	flag.BoolVar(&verboseFlag, "v", false, "Verbose the actions")
 
 	flag.Parse()
 
@@ -96,60 +105,53 @@ func main() {
 		unitsPreSuffix = "nm"
 	}
 
+	// X from and to
 	if *fromFlag >= 0 {
 		*fromFlag = ensureUnitsFunc(*fromFlag)
 	}
 	if *toFlag >= 0 {
 		*toFlag = ensureUnitsFunc(*toFlag)
 	}
-
 	if *fromFlag > *toFlag {
 		*fromFlag, *toFlag = *toFlag, *fromFlag
 	}
-	// Arithmetics to be done
-	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *spectrum.Spectrum
+
+	// Arithmetics operands
+	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *SpectrumWrapper
 	var err error
 	if *addFlag != "" {
-		if addSpectrum, err = spectrum.SpectrumFromFile(*addFlag); err != nil {
+		if addSpectrum, err = NewSpecWrapper(*addFlag); err != nil {
 			log.Fatal(err)
 		}
+		addSpectrum.s.ModifyX(ensureUnitsFunc)
 	}
 	if *subFlag != "" {
-		if subSpectrum, err = spectrum.SpectrumFromFile(*subFlag); err != nil {
+		if subSpectrum, err = NewSpecWrapper(*subFlag); err != nil {
 			log.Fatal(err)
 		}
+		subSpectrum.s.ModifyX(ensureUnitsFunc)
 	}
 	if *mulFlag != "" {
-		if mulSpectrum, err = spectrum.SpectrumFromFile(*mulFlag); err != nil {
+		if mulSpectrum, err = NewSpecWrapper(*mulFlag); err != nil {
 			log.Fatal(err)
 		}
+		mulSpectrum.s.ModifyX(ensureUnitsFunc)
 	}
 	if *divFlag != "" {
-		if divSpectrum, err = spectrum.SpectrumFromFile(*divFlag); err != nil {
+		if divSpectrum, err = NewSpecWrapper(*divFlag); err != nil {
 			log.Fatal(err)
 		}
+		divSpectrum.s.ModifyX(ensureUnitsFunc)
 	}
 
 	// Processing
 	for _, sw := range modified {
-		// Addition and subtracting of spectra should be done before noise calculation
-		if *addFlag != "" {
-			addSpectrum.ModifyX(ensureUnitsFunc)
-			sw.s.Add(addSpectrum)
-		}
-		if *subFlag != "" {
-			addSpectrum.ModifyX(ensureUnitsFunc)
-			sw.s.Subtract(subSpectrum)
+
+		if verboseFlag {
+			fmt.Println()
+			fmt.Println(sw.dir + sw.fname)
 		}
 
-		// Subtract the noise from the full-length signal
-		if *noiseFlag {
-			n := sw.s.Noise()
-			sw.s.ModifyY(func(y float64) float64 { return y - n })
-			if *verboseFlag {
-				fmt.Printf("%s: Subtracted noise %f\n", sw.dir+sw.fname, n)
-			}
-		}
 		// Process the X units
 		if modifyUnits {
 			sw.s.ModifyX(ensureUnitsFunc)
@@ -158,31 +160,62 @@ func main() {
 			// Real spectrum X is always assumed to be positive
 			xl, xr := *fromFlag, *toFlag
 			if xl > 0 && xr > 0 {
+				opMessage(">", fmt.Sprintf("%v", xl))
+				opMessage("<", fmt.Sprintf("%v", xr))
 				sw.s.Cut(xl, xr)
 			}
 		}
+		// Addition and subtracting of spectra should be done before noise calculation
+		if *addFlag != "" {
+			sw.s.Add(addSpectrum.s)
+			opMessage("+", addSpectrum.fname)
+			sw.AddSpOpSuffix("add", addSpectrum.fname)
+		}
+		if *subFlag != "" {
+			sw.s.Subtract(subSpectrum.s)
+			opMessage("-", subSpectrum.fname)
+			sw.AddSpOpSuffix("sub", subSpectrum.fname)
+		}
+
+		// Subtract the noise from the full-length signal
+		if *noiseFlag {
+			n := sw.s.Noise()
+			opMessage("-", fmt.Sprintf("%v (noise)", n))
+			sw.s.ModifyY(func(y float64) float64 { return y - n })
+			sw.AddNumOpSuffix("noise", n)
+		}
 
 		if *mulFlag != "" {
-			mulSpectrum.ModifyX(ensureUnitsFunc)
-			sw.s.Multiply(mulSpectrum)
+			opMessage("*", mulSpectrum.fname)
+			sw.s.Multiply(mulSpectrum.s)
+			sw.AddSpOpSuffix("mul", mulSpectrum.fname)
 		}
 		if *divFlag != "" {
-			divSpectrum.ModifyX(ensureUnitsFunc)
-			sw.s.Divide(divSpectrum)
+			sw.s.Divide(divSpectrum.s)
+			opMessage("/", divSpectrum.fname)
+			sw.AddSpOpSuffix("div", divSpectrum.fname)
 		}
 
 		// Arithmetics with numbers
 		if *addNumFlag != 0.0 {
+			opMessage("+", fmt.Sprintf("%v", *addNumFlag))
 			sw.s.ModifyY(func(y float64) float64 { return y + *addNumFlag })
+			sw.AddNumOpSuffix("add", *addNumFlag)
 		}
 		if *subNumFlag != 0.0 {
+			opMessage("-", fmt.Sprintf("%v", *subNumFlag))
 			sw.s.ModifyY(func(y float64) float64 { return y - *subNumFlag })
+			sw.AddNumOpSuffix("sub", *subNumFlag)
 		}
 		if *mulNumFlag != 1.0 {
+			opMessage("*", fmt.Sprintf("%v", *mulNumFlag))
 			sw.s.ModifyY(func(y float64) float64 { return y * *mulNumFlag })
+			sw.AddNumOpSuffix("mul", *mulNumFlag)
 		}
 		if *divNumFlag != 1.0 {
+			opMessage("/", fmt.Sprintf("%v", *divNumFlag))
 			sw.s.ModifyY(func(y float64) float64 { return y / *divNumFlag })
+			sw.AddNumOpSuffix("div", *divNumFlag)
 		}
 
 		if *smoothFlag != "" {
@@ -190,6 +223,7 @@ func main() {
 		}
 		if *meanFlag {
 			// MEAN THEM ALL
+			sw.AddNumOpSuffix("mean", float64(len(modified)))
 		}
 		if *statsFlag {
 			// Calculate stats
@@ -201,7 +235,6 @@ func main() {
 	var results []*SpectrumWrapper
 	results = originals
 	if modificationsRequired {
-		fmt.Println("Modified results will be printed")
 		results = modified
 	}
 
