@@ -71,19 +71,26 @@ func main() {
 	var modificationsRequired bool = *nm2EvFlag || *ev2NmFlag ||
 		*addFlag != "" || *subFlag != "" || *mulFlag != "" || *divFlag != ""
 
-	// Filling the data
-	originals := make([]*SpectrumWrapper, len(flag.Args()))
-	var modified []*SpectrumWrapper
-	for _, fname := range flag.Args() {
-		sw, err := NewSpecWrapper(fname, *colXFlag, *colYFlag)
+	// Parsing passed filenames
+	// originals := []*SpectrumWrapper{}
+	var originals, modified []*SpectrumWrapper
+	for _, arg := range flag.Args() {
+		files, err := filepath.Glob(arg)
 		if err != nil {
-			fmt.Print("Error processing file " + fname + ": ")
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
-		originals = append(originals, sw)
-		if modificationsRequired {
-			modified = append(modified, sw)
+		for _, f := range files {
+			sw, err := NewSpecWrapper(f, *colXFlag, *colYFlag)
+			if err != nil {
+				fmt.Print("Error processing file " + f + ": ")
+				fmt.Println(err)
+				continue
+			}
+			originals = append(originals, sw)
+			if modificationsRequired {
+				modified = append(modified, sw)
+			}
 		}
 	}
 
