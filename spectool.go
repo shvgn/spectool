@@ -14,6 +14,14 @@ import (
 	"path/filepath"
 )
 
+const (
+	version  string = "1.0"
+	author   string = "Eugene Shevchenko"
+	email    string = "shvgn@protonmail.ch"
+	url      string = "https://github.com/shvgn/spectool"
+	liscence string = "MIT"
+)
+
 // Global for the verbosity control
 var verboseFlag bool
 
@@ -68,12 +76,9 @@ func main() {
 
 	flag.Parse()
 
-	var modificationsRequired bool = *nm2EvFlag || *ev2NmFlag ||
-		*addFlag != "" || *subFlag != "" || *mulFlag != "" || *divFlag != ""
-
 	// Parsing passed filenames
 	// originals := []*SpectrumWrapper{}
-	var originals, modified []*SpectrumWrapper
+	var spData []*SpectrumWrapper
 	for _, arg := range flag.Args() {
 		files, err := filepath.Glob(arg)
 		if err != nil {
@@ -87,10 +92,7 @@ func main() {
 				fmt.Println(err)
 				continue
 			}
-			originals = append(originals, sw)
-			if modificationsRequired {
-				modified = append(modified, sw)
-			}
+			spData = append(spData, sw)
 		}
 	}
 
@@ -152,7 +154,7 @@ func main() {
 	}
 
 	// Processing
-	for _, sw := range modified {
+	for _, sw := range spData {
 
 		if verboseFlag {
 			fmt.Println()
@@ -230,7 +232,7 @@ func main() {
 		}
 		if *meanFlag {
 			// MEAN THEM ALL
-			sw.AddNumOpSuffix("mean", float64(len(modified)))
+			sw.AddNumOpSuffix("mean", float64(len(spData)))
 		}
 		if *statsFlag {
 			// Calculate stats
@@ -239,12 +241,6 @@ func main() {
 	}
 
 	// Saving
-	var results []*SpectrumWrapper
-	results = originals
-	if modificationsRequired {
-		results = modified
-	}
-
 	// Directory to save in
 	if *outDirFlag != "" {
 		var perm os.FileMode = 0755
@@ -259,7 +255,7 @@ func main() {
 		*outFmtFlag = "ascii"
 	}
 
-	for _, sw := range results {
+	for _, sw := range spData {
 		var path string
 		var perm os.FileMode = 0644
 
