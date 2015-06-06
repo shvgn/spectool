@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	version  string = "1.0"
-	author   string = "Eugene Shevchenko"
-	email    string = "shvgn@protonmail.ch"
-	url      string = "https://github.com/shvgn/spectool"
-	liscence string = "MIT"
+	Version  string = "1.0"
+	Author   string = "Eugene Shevchenko"
+	Email    string = "shvgn@protonmail.ch"
+	URL      string = "https://github.com/shvgn/spectool"
+	Liscence string = "MIT"
 )
 
 // Global for the verbosity control
@@ -105,13 +105,17 @@ func main() {
 	var ensureUnitsFunc func(float64) float64
 	var unitsPreSuffix string
 
-	switch modifyUnits {
-	case *nm2EvFlag:
+	if *nm2EvFlag {
 		ensureUnitsFunc = ensureEv
 		unitsPreSuffix = "ev"
-	case *ev2NmFlag:
+	} else if *ev2NmFlag {
 		ensureUnitsFunc = ensureNm
 		unitsPreSuffix = "nm"
+	} else {
+		ensureUnitsFunc = func(x float64) float64 {
+			log.Fatal("Unexpected units conversion")
+			return 0.0
+		}
 	}
 
 	// X from and to
@@ -132,25 +136,33 @@ func main() {
 		if addSpectrum, err = NewSpecWrapper(*addFlag); err != nil {
 			log.Fatal(err)
 		}
-		addSpectrum.s.ModifyX(ensureUnitsFunc)
+		if modifyUnits {
+			addSpectrum.s.ModifyX(ensureUnitsFunc)
+		}
 	}
 	if *subFlag != "" {
 		if subSpectrum, err = NewSpecWrapper(*subFlag); err != nil {
 			log.Fatal(err)
 		}
-		subSpectrum.s.ModifyX(ensureUnitsFunc)
+		if modifyUnits {
+			subSpectrum.s.ModifyX(ensureUnitsFunc)
+		}
 	}
 	if *mulFlag != "" {
 		if mulSpectrum, err = NewSpecWrapper(*mulFlag); err != nil {
 			log.Fatal(err)
 		}
-		mulSpectrum.s.ModifyX(ensureUnitsFunc)
+		if modifyUnits {
+			mulSpectrum.s.ModifyX(ensureUnitsFunc)
+		}
 	}
 	if *divFlag != "" {
 		if divSpectrum, err = NewSpecWrapper(*divFlag); err != nil {
 			log.Fatal(err)
 		}
-		divSpectrum.s.ModifyX(ensureUnitsFunc)
+		if modifyUnits {
+			divSpectrum.s.ModifyX(ensureUnitsFunc)
+		}
 	}
 
 	// Processing
