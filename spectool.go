@@ -76,8 +76,8 @@ func main() {
 
 	flag.Parse()
 
-	// Parsing passed filenames
-	// originals := []*SpectrumWrapper{}
+	// Parsing filenames from passed globs
+	// Works well in both Windows cmd and Unix shells
 	var spData []*SpectrumWrapper
 	for _, arg := range flag.Args() {
 		files, err := filepath.Glob(arg)
@@ -97,7 +97,7 @@ func main() {
 	}
 
 	// Choosing units for the processing
-	// Forbid using -ev and -nm together
+	// Forbid using -ev and -nm together. FIXME Why?
 	if *nm2EvFlag && *ev2NmFlag {
 		log.Fatal("Cannot work on nanometers and electron-volts simultaneously. Sorry.")
 	}
@@ -167,7 +167,6 @@ func main() {
 
 	// Processing
 	for _, sw := range spData {
-
 		if verboseFlag {
 			fmt.Println()
 			fmt.Println(sw.dir + sw.fname)
@@ -179,6 +178,7 @@ func main() {
 			sw.fname = addPreSuffix(sw.fname, unitsPreSuffix)
 
 			// Real spectrum X is always assumed to be positive
+			// FIXME Make cut one-sided
 			xl, xr := *fromFlag, *toFlag
 			if xl > 0 && xr > 0 {
 				opMessage(">", fmt.Sprintf("%v", xl))
@@ -255,7 +255,7 @@ func main() {
 	// Saving
 	// Directory to save in
 	if *outDirFlag != "" {
-		var perm os.FileMode = 0755
+		var perm os.FileMode = 0755 // FIXME Why use something else?
 		err := os.MkdirAll(*outDirFlag, perm)
 		if err != nil {
 			log.Fatal(err)
@@ -269,7 +269,7 @@ func main() {
 
 	for _, sw := range spData {
 		var path string
-		var perm os.FileMode = 0644
+		var perm os.FileMode = 0644 // FIXME Why use something else?
 
 		if *outDirFlag != "" {
 			path = filepath.Join(*outDirFlag, sw.fname)
@@ -284,7 +284,7 @@ func main() {
 	}
 
 	// --------------------------------------------------------------------------
-	// Take PLE values into account
+	// Take PLE values into account TODO
 
 	// pleVals := make([]float64, 0)
 
