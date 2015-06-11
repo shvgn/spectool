@@ -76,28 +76,42 @@ func main() {
 
 	flag.Parse()
 
-	// Parsing filenames from passed globs
-	// Works well in both Windows cmd and Unix shells
+	// Parsing filenames from passed strings. Those are considered to be files
+	// and globs in order to work in both Windows cmd and Unix shells
 	var spData []*SpectrumWrapper
+	var sw *SpectrumWrapper
+	var err error
+	var files []string
+
 	for _, arg := range flag.Args() {
-		files, err := filepath.Glob(arg)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		for _, f := range files {
-			sw, err := NewSpecWrapper(f, *colXFlag, *colYFlag)
-			if err != nil {
-				fmt.Print("Error processing file " + f + ": ")
+
+		if sw, err = NewSpecWrapper(arg, *colXFlag, *colYFlag); err != nil {
+			if verboseFlag {
+				fmt.Println("Cannot open file", arg, ":",
+					err, "Trying woth glob...")
+			}
+			if files, err = filepath.Glob(arg); err != nil {
+				if verboseFlag {
+					fmt.Println("Nor filename nor correct glob pattern.")
+				}
 				fmt.Println(err)
 				continue
 			}
-			spData = append(spData, sw)
+			for _, f := range files { // arg is a valid glob pattern
+				sw, err = NewSpecWrapper(f, *colXFlag, *colYFlag)
+				if err != nil {
+					fmt.Println(f+": skipped file because of parse error:", err)
+					continue
+				}
+				spData = append(spData, sw)
+			}
+			continue // Appended files from the glob
 		}
+		spData = append(spData, sw) // arg is a valid filename
 	}
 
 	// Choosing units for the processing
-	// Forbid using -ev and -nm together. FIXME Why?
+	// Forbid using -2ev and -2nm together. FIXME Why?
 	if *nm2EvFlag && *ev2NmFlag {
 		log.Fatal("Cannot work on nanometers and electron-volts simultaneously. Sorry.")
 	}
@@ -131,7 +145,7 @@ func main() {
 
 	// Arithmetics operands
 	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *SpectrumWrapper
-	var err error
+	// var err error
 	if *addFlag != "" {
 		if addSpectrum, err = NewSpecWrapper(*addFlag); err != nil {
 			log.Fatal(err)
@@ -172,6 +186,14 @@ func main() {
 			fmt.Println(sw.dir + sw.fname)
 		}
 
+		// Subtract the noise from the full-length signal
+		if *noiseFlag {
+			n := sw.s.Noise()
+			opMessage("-", fmt.Sprintf("%v (noise)", n))
+			sw.s.ModifyY(func(y float64) float64 { return y - n })
+			sw.AddNumOpSuffix("noise", n)
+		}
+
 		// Process the X units
 		if modifyUnits {
 			sw.s.ModifyX(ensureUnitsFunc)
@@ -196,14 +218,6 @@ func main() {
 			sw.s.Subtract(subSpectrum.s)
 			opMessage("-", subSpectrum.fname)
 			sw.AddSpOpSuffix("sub", subSpectrum.fname)
-		}
-
-		// Subtract the noise from the full-length signal
-		if *noiseFlag {
-			n := sw.s.Noise()
-			opMessage("-", fmt.Sprintf("%v (noise)", n))
-			sw.s.ModifyY(func(y float64) float64 { return y - n })
-			sw.AddNumOpSuffix("noise", n)
 		}
 
 		if *mulFlag != "" {
@@ -320,37 +334,3 @@ func main() {
 	// fmt.Println("PLE detection values parsed: ", pleVals)
 	// fmt.Println("Other cmd arguments: ", flag.Args())
 }
-
-/************************************************************************
-
-Interface
-
-Tasks:
-
-A specrum file is a two-column ASCII file with numbers, the columns being
-separated by space characters such as multiple whitespaces or tabs (TSV file).
-Headers are allowed. For an arbitrary ASCII file if a header has colon ':', the
-colon is considered to be the delimeter, otherwise it will be first space
-character met after the first word.
-
-
-HeaderName: Header Value with a bunch of whitespaces
-Header Name 2: And this must work, too
-Header Value is now from the second word and towards the end
-1.000000 4.3123353
-1.010000    12434,53432
-
-...
-
-	spectool -nm2ev file1 file2 file3 ...
-	spectool -ple file1 file2 file3 ...
-	spectool -mean file1 file2 file3 ...
-	spectool -stats file1 file2 file3 ...
-
-	spectool -stats -ple 360 360.5 362 [...] -nm2ev file1 file2 file3 ...
-		or spectool -stats -ple=all -nm2ev file1 file2 file3 ...
-
-	spectool -nm2ev file1 fil32 file3 -noise -stats -from=235 -to=310 -xshift=1.23 -yshift=40 -mul -div -add -sub
-
-
-*************************************************************************/

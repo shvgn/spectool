@@ -35,3 +35,25 @@ func TestAddPreSuffix(t *testing.T) {
 
 	}
 }
+
+func TestAddPrePreSuffix(t *testing.T) {
+	names := []struct {
+		fname string
+		sfx   string
+		want  string
+	}{
+		{"data1", "sfx", "data1.sfx"},
+		{"data1.txt", "sfx", "data1.sfx.txt"},
+		{"data1.ev.dat", "sfx", "data1.sfx.ev.dat"},
+		{"data1.nm", "sfx", "data1.sfx.nm"},
+		{"d.nm.a.ev.t.a.ev.dat", "sfx", "d.nm.a.ev.t.a.sfx.ev.dat"},
+	}
+	for _, s := range names {
+		got := addPreSuffix(s.fname, s.sfx)
+		if got != s.want {
+			t.Errorf("addPreSuffix(%q, %q) == %q, want %q",
+				s.fname, s.sfx, got, s.want)
+		}
+
+	}
+}
