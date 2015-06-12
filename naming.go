@@ -92,3 +92,9 @@ func (sw *SpectrumWrapper) AddNumOpSuffix(op string, num float64) {
 	sfx := fmt.Sprintf("%s%s%v%s", op, VALUE_BRACE_OPEN, num, VALUE_BRACE_CLOSE)
 	sw.fname = AddPrePreSuffix(sw.fname, sfx)
 }
+
+// Add info about operation involving a number in a file name
+func (sw *SpectrumWrapper) AddOpSuffix(op, s string) {
+	sfx := fmt.Sprintf("%s%s%s%s", op, VALUE_BRACE_OPEN, s, VALUE_BRACE_CLOSE)
+	sw.fname = AddPrePreSuffix(sw.fname, sfx)
+}

@@ -9,7 +9,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/dustin/go-humanize"
 	"log"
+	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 )
@@ -67,8 +70,8 @@ func init() {
 	flag.BoolVar(&keepNmFlag, "2nm", false, "Keep X in nanometers")
 
 	// X cutting options
-	flag.Float64Var(&fromFlag, "xfrom", -1.0, "X to start from")
-	flag.Float64Var(&toFlag, "xto", -1.0, "X to end with")
+	flag.Float64Var(&fromFlag, "xfrom", math.Inf(-1), "X to start from")
+	flag.Float64Var(&toFlag, "xto", math.Inf(1), "X to end with")
 
 	// Spectra arithmetic operations with numbers
 	flag.Float64Var(&addNumFlag, "nadd", 0.0, "Add a number ")
@@ -95,7 +98,7 @@ func init() {
 	flag.IntVar(&colYFlag, "coly", 2, "Set number of the Y column in passed data ASCII files")
 
 	flag.StringVar(&outFmtFlag, "of", "ascii", "[ascii|tsv|csv]   Format of the output file")
-	flag.StringVar(&outDirFlag, "od", "", "Directory for output files. If not specified new files are placed near original ones")
+	flag.StringVar(&outDirFlag, "od", "", "Directory for output files")
 
 	flag.BoolVar(&verboseFlag, "v", false, "Verbose the actions")
 
@@ -139,39 +142,70 @@ func main() {
 	// Choosing units for the processing
 	// Forbid using -2ev and -2nm together. FIXME Why?
 	if keepEvFlag && keepNmFlag {
-		log.Fatal("Cannot work on nanometers and electron-volts simultaneously. Sorry.")
+		log.Fatal("Cannot work on multiple X units simultaneously. Sorry.")
 	}
 	modifyUnits := keepEvFlag || keepNmFlag
-	var ensureUnitsFunc func(float64) float64
-	var unitsPreSuffix string
+	ensureUnitsFunc := func(x float64) float64 {
+		if modifyUnits { // Something went wrong
+			log.Fatal("Unexpected units conversion")
+			return math.NaN()
+		}
+		return x
+	}
 
+	var unitsPreSuffix string
 	if keepEvFlag {
 		ensureUnitsFunc = ensureEv
 		unitsPreSuffix = "ev"
-	} else if keepNmFlag {
+	}
+	if keepNmFlag {
 		ensureUnitsFunc = ensureNm
 		unitsPreSuffix = "nm"
-	} else {
-		ensureUnitsFunc = func(x float64) float64 {
-			log.Fatal("Unexpected units conversion")
-			return 0.0
-		}
 	}
 
-	// X from and to
-	if fromFlag >= 0 {
+	// Boundaries for cutting X from and to
+	if fromFlag > toFlag { // The X cutting flags are invalid
+		log.Fatal("Invalid order of X cutting flags")
+	}
+
+	var cutLeft, cutRight bool
+	var checker1, checker2 float64 // We want not to mess with the order of cutting values
+
+	if !math.IsInf(fromFlag, -1) {
+		cutLeft = true
+		checker1 = fromFlag
 		fromFlag = ensureUnitsFunc(fromFlag)
 	}
-	if toFlag >= 0 {
+	if !math.IsInf(toFlag, 1) {
+		cutRight = true
+		checker2 = toFlag
 		toFlag = ensureUnitsFunc(toFlag)
 	}
-	if fromFlag > toFlag {
-		fromFlag, toFlag = toFlag, fromFlag
+
+	if modifyUnits && (cutLeft || cutRight) { // Check the order of cut boundaries
+		if cutLeft && cutRight {
+			if fromFlag > toFlag { // X order was reversed
+				fromFlag, toFlag = toFlag, fromFlag
+				cutLeft, cutRight = cutRight, cutLeft
+			}
+		} else { // Artificial checker required
+			if cutLeft {
+				checker2 = checker1 + (math.Abs(checker1)+1)*rand.Float64() // checker2 > checker1
+			}
+			if cutRight {
+				checker1 = checker2 - (math.Abs(checker2)+1)*rand.Float64() // checker1 < checker2
+			}
+			newChecker1, newChecker2 := ensureUnitsFunc(checker1), ensureUnitsFunc(checker2)
+			if newChecker1 > newChecker2 { // Modified X has reversed order
+				fromFlag, toFlag = toFlag, fromFlag
+				cutLeft, cutRight = cutRight, cutLeft
+			}
+		}
+
 	}
 
 	// Arithmetics operands
 	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *SpectrumWrapper
-	// var err error
 	if addFlag != "" {
 		if addSpectrum, err = NewSpecWrapper(addFlag); err != nil {
 			log.Fatal(err)
@@ -206,35 +240,54 @@ func main() {
 	}
 
 	// Processing
-	for _, sw := range spData {
+	l := len(spData)
+	for i, sw := range spData {
 		if verboseFlag {
-			fmt.Println()
-			fmt.Println(sw.dir + sw.fname)
+			fmt.Println(fmt.Sprintf("%d/%d  ", i, l) + sw.dir + sw.fname)
 		}
 
 		// Subtract the noise from the full-length signal
 		if noiseFlag {
 			n := sw.s.Noise()
-			opMessage("-", fmt.Sprintf("%v (noise)", n))
+			opMessage("-", fmt.Sprintf("%s (noise)", humanize.Ftoa(n)))
 			sw.s.ModifyY(func(y float64) float64 { return y - n })
-			sw.AddNumOpSuffix("noise", n)
+			sw.AddOpSuffix("noise", humanize.Ftoa(n))
 		}
 
 		// Process the X units
 		if modifyUnits {
 			sw.s.ModifyX(ensureUnitsFunc)
 			sw.fname = addPreSuffix(sw.fname, unitsPreSuffix)
+		}
 
-			// Real spectrum X is always assumed to be positive
-			// FIXME Make cut one-sided
-			xl, xr := fromFlag, toFlag
-			if xl > 0 && xr > 0 {
-				opMessage(">", fmt.Sprintf("%v", xl))
-				opMessage("<", fmt.Sprintf("%v", xr))
-				sw.s.Cut(xl, xr)
+		// Cutting is done within boundaries and with spectra after making
+		// sure all X units are the same.
+		// FIXME Make cut one-sided
+		if cutLeft && cutRight {
+			opMessage(">", humanize.Ftoa(fromFlag))
+			opMessage("<", humanize.Ftoa(toFlag))
+			sw.s.Cut(fromFlag, toFlag)
+			sw.AddOpSuffix("x", fmt.Sprintf("%s:%s", humanize.Ftoa(fromFlag), humanize.Ftoa(toFlag)))
+			// sw.AddOpSuffix("from", humanize.Ftoa(fromFlag))
+			// sw.AddOpSuffix("to", humanize.Ftoa(toFlag))
+		} else {
+			if cutLeft {
+				opMessage(">", fmt.Sprintf("%v", humanize.Ftoa(fromFlag)))
+				xLast, _ := sw.s.LastPoint()
+				sw.s.Cut(fromFlag, xLast)
+				sw.AddOpSuffix("x", fmt.Sprintf("%s:", humanize.Ftoa(fromFlag)))
+				// sw.AddOpSuffix("from", humanize.Ftoa(fromFlag))
+			}
+			if cutRight {
+				opMessage("<", fmt.Sprintf("%v", humanize.Ftoa(toFlag)))
+				xFirst, _ := sw.s.FirstPoint()
+				sw.s.Cut(xFirst, toFlag)
+				sw.AddOpSuffix("x", fmt.Sprintf(":%s", humanize.Ftoa(toFlag)))
+				// sw.AddOpSuffix("to", humanize.Ftoa(toFlag))
 			}
 		}
-		// Addition and subtracting of spectra should be done before noise calculation
+
+		// Addition and subtracting of spectra should be done before noise calculation?
 		if addFlag != "" {
 			sw.s.Add(addSpectrum.s)
 			opMessage("+", addSpectrum.fname)
