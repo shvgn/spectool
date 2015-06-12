@@ -16,15 +16,13 @@ The ASCII data file can be just a two-column text with numeric data separated by
 # Space characters are assumed to be the delimeters.
 
 # Columns are counted from 1
-#1	2	3	4
-A1	B1	C1	D1
-A2	B2	C2	D2
-A3	B3	C3	D3
-A4	B4	C4	D4
-A5	B5	C5	D5
-A6	B6	C6	D6
-A7	B7	C7	D7
-A8	B8	C8	D8
+#1   2   3   4
+A1  A2  A3  A4
+B1  B2  B3  B4
+C1  C2  C3  C4
+D1  D2  D3  D4
+E1  E2  E3  E4
+F1  F2  F3  F4
 ```
 
 X and Y are taken as columns 1 and 2 respectively. To take other columns in account one can use flags `xcol` and `ycol`
@@ -42,7 +40,7 @@ Multiple tasks could look like this
 spectool -2ev -n -spdiv=ApparatusSpectra.dat -xfrom=230 -xto=320 -od=res -s -v spectrum*.txt
 ```
 Which means calculate and subtract noise (```-n```), keep X values in electron-volts (```-2ev```), cut the data from 230 nm to 320 nm (these values will also be converted and used in electron-volts), show some analysis data (```-s```) and verbose output (```-v```) and create direcory 'res' (```-od```) to put the resulting ascii files there. The new files will be named as follows (e.g. we took file spec1.txt as an input for the command above):
-``` spec1.noise[1.34].div[ApparatusSpectra.dat].ev.txt ```
+``` spec1.noise[1.34].x[3.874506:5.390617].div[ApparatusSpectra.dat].ev.txt ```
 
 ```
 spectool -h
@@ -83,23 +81,23 @@ spectool -spdiv=/path/to/calibration/curve.dat file1 file2 file3 ...
 TODO
 -----
 - [x] naming and placing of resulting files
-- [x] arithmetic operations including interpolations
+- [x] arithmetic operations involving interpolations
 - [ ] calculation of 
   - [x] noise level
   - [ ] mean spectra
   - [ ] metadata (```-s```)
-    - [ ] area under the curve
-    - [ ] maximum position (x,y)
+    - [x] area under the curve
+    - [x] maximum position (x,y)
     - [ ] full width at half-maximum (FWHM) for main peaks
     - [ ] position of FWHM's for main peaks
-- [ ] One-way cutting of X
+- [x] One-way cutting of X
 - [ ] Smoothing by Savitsky-Golay or Holoborodko filters 
-- [ ] Divide all resulting data by maximum hight/area of a reference spectrum, so there can be always compared in relative units to some reference (-div-by-max, -div-by-area=/path/to/referenceSpectrum.txt)
-- [ ] Separate peaks by minimum (x,y) in a region passed by extra keys (-sepfrom, -septo). Useful for distinct precessing of peaks.
-- [ ] Input formats (-if=csv)
+- [ ] Divide all resulting data by maximum hight/area of a reference spectrum, so they could be always compared in relative units to some reference data (e.g. ```-div-by-max```, ```-div-by-area=/path/to/referenceSpectrum.txt```)
+- [ ] Separate peaks by minimum (x,y) in a region passed by extra keys (```-sepfrom```, ```-septo```). Useful for distinct precessing of peaks.
+- [ ] Input formats (e.g. ```-if=csv```)
   - [x] ASCII/TSV
   - [ ] CSV
-- [ ] Ouput formats (-of=matlab)
+- [ ] Ouput formats (e.g. ```-of=matlab```)
   - [x] ASCII/TSV
   - [ ] CSV
   - [ ] Matlab 2-D array

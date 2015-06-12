@@ -9,7 +9,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -40,12 +39,12 @@ func NewSpecWrapper(fpath string, cols ...int) (*SpectrumWrapper, error) {
 // String representation
 func (sw *SpectrumWrapper) String() string {
 	var buf bytes.Buffer
-	if sw.dir == "" {
-		buf.WriteString(fmt.Sprintf("Directory: %s\n", "."))
-	} else {
-		buf.WriteString(fmt.Sprintf("Directory: %s\n", sw.dir))
-	}
-	buf.WriteString(fmt.Sprintf("Filename: %s\n", sw.fname))
+	// if sw.dir == "" {
+	// 	buf.WriteString(fmt.Sprintf("Directory: %s\n", "."))
+	// } else {
+	// 	buf.WriteString(fmt.Sprintf("Directory: %s\n", sw.dir))
+	// }
+	// buf.WriteString(fmt.Sprintf("Filename: %s\n", sw.fname))
 	buf.WriteString(sw.s.String())
 	buf.WriteString("\n")
 	return buf.String()

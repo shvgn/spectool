@@ -9,20 +9,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/dustin/go-humanize"
 	"log"
 	"math"
 	"math/rand"
 	"os"
 	"path/filepath"
-)
 
-const (
-	Version string = "1.0"
-	Author  string = "Eugene Shevchenko"
-	Email   string = "shvgn@protonmail.ch"
-	URL     string = "https://github.com/shvgn/spectool"
-	Licence string = "MIT"
+	"github.com/dustin/go-humanize"
 )
 
 var (
