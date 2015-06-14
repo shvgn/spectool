@@ -37,10 +37,10 @@ var (
 	mulFlag string // Multiply by spectrum
 	divFlag string // Divide by spectrum
 
-	noiseFlag  bool   // Calculate and subtract noise
-	meanFlag   bool   // Calculate arithmetic mean of spectra
-	smoothFlag string // Smooth spectra
-	statsFlag  bool   // Calculate metainfo
+	noiseFlag bool // Calculate and subtract noise
+	// meanFlag   bool   // Calculate arithmetic mean of spectra
+	// smoothFlag string // Smooth spectra
+	// statsFlag  bool   // Calculate metainfo
 
 	colXFlag int // Column in ASCII file to read X from
 	colYFlag int // Column in ASCII file to read Y from
@@ -81,12 +81,12 @@ func init() {
 	// Spectra metadata
 	flag.BoolVar(&noiseFlag, "n", false, "Subtract noise")
 
-	flag.BoolVar(&meanFlag, "mean", false, "(Not implemented) Mean spectrum from all the passed data")
-	flag.StringVar(&smoothFlag, "smooth", "",
-		"[ws,po]\t(Not implemented) Smooth data with optionally specified both window size and polynome order")
+	// flag.BoolVar(&meanFlag, "mean", false, "(Not implemented) Mean spectrum from all the passed data")
+	// flag.StringVar(&smoothFlag, "smooth", "",
+	// 	"[ws,po]\t(Not implemented) Smooth data with optionally specified both window size and polynome order")
 
 	// Non-modificating flags
-	flag.BoolVar(&statsFlag, "s", false, "(Not implemented) Collect statistics on the data")
+	// flag.BoolVar(&statsFlag, "s", false, "(Not implemented) Collect statistics on the data")
 	flag.IntVar(&colXFlag, "colx", 1, "Set number of the X column in passed data files")
 	flag.IntVar(&colYFlag, "coly", 2, "Set number of the Y column in passed data ASCII files")
 
@@ -325,17 +325,17 @@ func main() {
 			sw.AddNumOpSuffix("div", divNumFlag)
 		}
 
-		if smoothFlag != "" {
-			// SMOOTH THEM ALL!!!1
-		}
-		if meanFlag {
-			// MEAN THEM ALL
-			sw.AddNumOpSuffix("mean", float64(len(spData)))
-		}
-		if statsFlag {
-			// Calculate stats
-			// fmt.Println(stats(sw.s))
-		}
+		// if smoothFlag != "" {
+		// 	// SMOOTH THEM ALL!!!1
+		// }
+		// if meanFlag {
+		// 	// MEAN THEM ALL
+		// 	sw.AddNumOpSuffix("mean", float64(len(spData)))
+		// }
+		// if statsFlag {
+		// 	// Calculate stats
+		// 	// fmt.Println(stats(sw.s))
+		// }
 	}
 
 	// Saving
