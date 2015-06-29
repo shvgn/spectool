@@ -14,8 +14,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-
-	"github.com/dustin/go-humanize"
 )
 
 var (
@@ -260,7 +258,7 @@ func main() {
 			opMessage(">", humanize.Ftoa(fromFlag))
 			opMessage("<", humanize.Ftoa(toFlag))
 			sw.s.Cut(fromFlag, toFlag)
-			sw.AddOpSuffix("x", fmt.Sprintf("%s:%s", humanize.Ftoa(fromFlag), humanize.Ftoa(toFlag)))
+			sw.AddOpSuffix("x", fmt.Sprintf("%s-%s", humanize.Ftoa(fromFlag), humanize.Ftoa(toFlag)))
 			// sw.AddOpSuffix("from", humanize.Ftoa(fromFlag))
 			// sw.AddOpSuffix("to", humanize.Ftoa(toFlag))
 		} else {
@@ -268,14 +266,14 @@ func main() {
 				opMessage(">", fmt.Sprintf("%v", humanize.Ftoa(fromFlag)))
 				xLast, _ := sw.s.LastPoint()
 				sw.s.Cut(fromFlag, xLast)
-				sw.AddOpSuffix("x", fmt.Sprintf("%s:", humanize.Ftoa(fromFlag)))
+				sw.AddOpSuffix("x", fmt.Sprintf("%s-", humanize.Ftoa(fromFlag)))
 				// sw.AddOpSuffix("from", humanize.Ftoa(fromFlag))
 			}
 			if cutRight {
 				opMessage("<", fmt.Sprintf("%v", humanize.Ftoa(toFlag)))
 				xFirst, _ := sw.s.FirstPoint()
 				sw.s.Cut(xFirst, toFlag)
-				sw.AddOpSuffix("x", fmt.Sprintf(":%s", humanize.Ftoa(toFlag)))
+				sw.AddOpSuffix("x", fmt.Sprintf("-%s", humanize.Ftoa(toFlag)))
 				// sw.AddOpSuffix("to", humanize.Ftoa(toFlag))
 			}
 		}
