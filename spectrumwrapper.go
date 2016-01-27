@@ -13,7 +13,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/shvgn/spectrum"
+	spectrum "github.com/shvgn/xy"
 )
 
 // Type to handle data with its name. s is for the original data Spectrum, dir

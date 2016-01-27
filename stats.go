@@ -10,7 +10,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/shvgn/spectrum"
+	spectrum "github.com/shvgn/xy"
 )
 
 // A spectrum stats
