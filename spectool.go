@@ -237,7 +237,7 @@ func main() {
 	l := len(spData)
 	for i, sw := range spData {
 		if verboseFlag {
-			fmt.Println(fmt.Sprintf("%d/%d  ", i, l) + sw.dir + sw.fname)
+			fmt.Println(fmt.Sprintf("%d/%d  ", i+1, l) + sw.dir + sw.fname)
 		}
 
 		// Subtract the noise from the full-length signal
