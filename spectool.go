@@ -45,7 +45,7 @@ var (
 	colXFlag int // Column in ASCII file to read X from
 	colYFlag int // Column in ASCII file to read Y from
 
-	outFmtFlag string // Ouput format
+	// outFmtFlag string // Ouput format
 	outDirFlag string // Ouput directory for resulting spectra
 )
 
@@ -57,7 +57,9 @@ func opMessage(op, value string) {
 }
 
 func init() {
-	// Modificating flags
+	/*
+	************** Modificating flags **************
+	 */
 	// X Units
 	flag.BoolVar(&keepEvFlag, "2ev", false, "Keep X in electron-volts")
 	flag.BoolVar(&keepNmFlag, "2nm", false, "Keep X in nanometers")
@@ -85,12 +87,14 @@ func init() {
 	// flag.StringVar(&smoothFlag, "smooth", "",
 	// 	"[ws,po]\t(Not implemented) Smooth data with optionally specified both window size and polynome order")
 
-	// Non-modificating flags
+	/*
+	************** Non-modificating flags **************
+	 */
 	// flag.BoolVar(&statsFlag, "s", false, "(Not implemented) Collect statistics on the data")
 	flag.IntVar(&colXFlag, "colx", 1, "Set number of the X column in passed data files")
 	flag.IntVar(&colYFlag, "coly", 2, "Set number of the Y column in passed data ASCII files")
 
-	flag.StringVar(&outFmtFlag, "of", "ascii", "[ascii|tsv|csv]   Format of the output file")
+	// flag.StringVar(&outFmtFlag, "of", "ascii", "Format of the output file (not implemented)")
 	flag.StringVar(&outDirFlag, "od", "", "Directory for output files")
 
 	flag.BoolVar(&verboseFlag, "v", false, "Verbose the actions")
@@ -100,29 +104,26 @@ func init() {
 
 func main() {
 
-	// Parsing filenames from passed strings. Those are considered to be files
-	// and globs in order to work in both Windows cmd and Unix shells
 	var spData []*SpectrumWrapper
 	var sw *SpectrumWrapper
 	var err error
 	var files []string
 
+	/*
+		Parsing filenames from passed strings. Those are considered to be files and globs
+		in order to work in both Windows cmd and Unix shells
+	*/
+
 	for _, arg := range flag.Args() { // Remaining arguments are filepaths or globs to process
 		if sw, err = NewSpecWrapper(arg, colXFlag, colYFlag); err != nil {
-			if verboseFlag {
-				fmt.Println("Cannot open file", arg, ":", err, "Trying with glob...")
-			}
 			if files, err = filepath.Glob(arg); err != nil {
-				if verboseFlag {
-					fmt.Println("Nor filename nor correct glob pattern. Skipping.")
-				}
-				fmt.Println(err)
+				log.Println(err)
 				continue
 			}
 			for _, f := range files { // arg is a valid glob pattern
 				sw, err = NewSpecWrapper(f, colXFlag, colYFlag)
 				if err != nil {
-					fmt.Println(f+": Parse error:", err, "Skipping.")
+					log.Println(f+": Parse error:", err, "Skipping.")
 					continue
 				}
 				spData = append(spData, sw)
@@ -253,8 +254,10 @@ func main() {
 			sw.fname = addPreSuffix(sw.fname, unitsPreSuffix)
 		}
 
-		// Cutting is done within boundaries and with spectra after making
-		// sure all X units are the same.
+		/*
+			Cutting is done within boundaries and with spectra after making
+			sure all X units are the same.
+		*/
 		cutFmt := "%s,%s"
 		if cutLeft && cutRight {
 			opMessage(">", humanize.Ftoa(fromFlag))
@@ -280,7 +283,10 @@ func main() {
 			}
 		}
 
-		// Addition and subtracting of spectra should be done before noise calculation?
+		/*
+			Arithmetics with spectra
+			Addition and subtracting of spectra should be done before noise calculation?
+		*/
 		if addFlag != "" {
 			sw.s.Add(addSpectrum.s)
 			opMessage("+", addSpectrum.fname)
@@ -303,7 +309,9 @@ func main() {
 			sw.AddSpOpSuffix("div", divSpectrum.fname)
 		}
 
-		// Arithmetics with numbers
+		/*
+			Arithmetics with numbers
+		*/
 		if addNumFlag != 0.0 {
 			opMessage("+", fmt.Sprintf("%v", addNumFlag))
 			sw.s.ModifyY(func(y float64) float64 { return y + addNumFlag })
@@ -349,9 +357,9 @@ func main() {
 	}
 
 	// Output format
-	if outFmtFlag == "" {
-		outFmtFlag = "ascii"
-	}
+	// if outFmtFlag == "" {
+	// 	outFmtFlag = "ascii"
+	// }
 
 	for _, sw := range spData {
 		var path string
@@ -363,38 +371,10 @@ func main() {
 			path = filepath.Join(sw.dir, sw.fname)
 		}
 
-		err := sw.WriteFile(path, outFmtFlag, perm)
+		// err := sw.WriteFile(path, outFmtFlag, perm)
+		err := sw.WriteFile(path, "ascii", perm)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-
-	// --------------------------------------------------------------------------
-	// TODO Take PLE values into account
-
-	// pleVals := make([]float64, 0)
-
-	// if *pleSet != "" {
-	// 	if *pleSet == "all" {
-	// 		// Make the all!
-	// 	}
-
-	// 	// If it contains colons ':' than interpret is as matlab/julia range
-	// 	// e.g. 345:0.2:330 is the same as 330:0.2:345
-	// 	// 345:330 equals 330:1:345
-	// 	// aaaand we must also take into account electron-volts 4.5:0.05:5
-
-	// 	pleValStr := strings.Split(*pleSet, ",")
-	// 	fmt.Println("pleValStr: ", pleValStr)
-
-	// 	for _, v := range pleValStr {
-	// 		pleval, err := strconv.ParseFloat(v, 64)
-	// 		if err != nil {
-	// 			fmt.Println("Warning! Could not parse value for PLE:", v, "- Skipping.")
-	// 			continue
-	// 		}
-	// 		pleVals = append(pleVals, pleval)
-	// 	}
-	// }
-
 }
