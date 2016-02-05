@@ -236,7 +236,7 @@ func main() {
 	// Processing
 	l := len(spData)
 	for i, sw := range spData {
-		if verboseFlag {
+		if verboseFlag && l > 1 {
 			fmt.Println(fmt.Sprintf("%d/%d  ", i+1, l) + sw.dir + sw.fname)
 		}
 
