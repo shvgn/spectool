@@ -1,36 +1,30 @@
-// The code is provided "as is" without any warranty and shit.
-// You are free to copy, use and redistribute the code in any way you wish.
-//
-// Evgeny Shevchenko
-// shvgn@protonmail.ch
-// 2015
-
+// Simple command line utility for the manipulation of columned ASCII data files
 package main
 
 const (
-	LIGHT_SPEED     float64 = 299792458                            // meters per second
-	PLANCK_CONSTANT float64 = 4.135667516e-15                      // electronvolts * second, h
-	EVNM            float64 = PLANCK_CONSTANT * 1e+9 * LIGHT_SPEED // factor of nanometers and electron-volts
-	MAX_ENERGY      float64 = 10.0                                 // electron-volts
-	MIN_WAVELENGTH  float64 = EVNM / MAX_ENERGY                    // nanometers
+	lightSpeed     float64 = 299792458                          // Meters per second
+	planckConstant float64 = 4.135667516e-15                    // Electron-volt * second, h
+	eVtoNm         float64 = planckConstant * 1e+9 * lightSpeed // Factor of nanometer and electron-volt
+	maxEnergy      float64 = 10.0                               // Electron-volts
+	minWavelength  float64 = eVtoNm / maxEnergy                 // Nanometers
 )
 
-// Converter from nanometers to electron-volts and in reverse
+// ConvEvNm converts a value from nanometers to electron-volts and in reverse
 func ConvEvNm(x float64) float64 {
-	return EVNM / x
+	return eVtoNm / x
 }
 
-// Function to ensure the argument is in electron-volts
+// ensureEv ensures the argument is in electron-volts using maxEnergy constant
 func ensureEv(x float64) float64 {
-	if x < MAX_ENERGY {
+	if x < maxEnergy {
 		return x
 	}
 	return ConvEvNm(x)
 }
 
-// Function to ensure the argument is in nanometers
+// ensureNm ensures the argument is in nanometers using minWavelength constant
 func ensureNm(x float64) float64 {
-	if x > MIN_WAVELENGTH {
+	if x > minWavelength {
 		return x
 	}
 	return ConvEvNm(x)

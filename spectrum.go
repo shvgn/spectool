@@ -1,10 +1,4 @@
-// The code is provided "as is" without any warranty and shit.
-// You are free to copy, use and redistribute the code in any way you wish.
-//
-// Evgeny Shevchenko
-// shvgn@protonmail.ch
-// 2015
-
+// Simple command line utility for the manipulation of columned ASCII data files
 package main
 
 import (
@@ -18,7 +12,7 @@ import (
 
 // Type to handle data with its name. s is for the original data Spectrum, dir
 // stores the original directory of the file and fname is a new filename.
-type SpectrumWrapper struct {
+type Spectrum struct {
 	s     *xy.XY
 	dir   string
 	fname string
@@ -26,18 +20,18 @@ type SpectrumWrapper struct {
 
 // Get new SpecWrapper from a file containing data with optional column numbers
 // for Y alone or X and Y.
-func NewSpecWrapper(fpath string, cols ...int) (*SpectrumWrapper, error) {
+func NewSpecWrapper(fpath string, cols ...int) (*Spectrum, error) {
 	s, err := xy.FromFile(fpath, cols...)
 	if err != nil {
 		return nil, err
 	}
 	dir, fname := filepath.Split(fpath)
-	sw := &SpectrumWrapper{s: s, fname: fname, dir: dir}
+	sw := &Spectrum{s: s, fname: fname, dir: dir}
 	return sw, nil
 }
 
 // String representation
-func (sw *SpectrumWrapper) String() string {
+func (sw *Spectrum) String() string {
 	var buf bytes.Buffer
 	// if sw.dir == "" {
 	// 	buf.WriteString(fmt.Sprintf("Directory: %s\n", "."))
@@ -51,7 +45,7 @@ func (sw *SpectrumWrapper) String() string {
 }
 
 // Write the data into a new corresponding file
-func (sw *SpectrumWrapper) WriteFile(path string, fmt string, perm os.FileMode) error {
+func (sw *Spectrum) WriteFile(path string, fmt string, perm os.FileMode) error {
 	var strFunc func() string
 	if fmt == "ascii" {
 		strFunc = sw.String

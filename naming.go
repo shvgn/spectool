@@ -1,10 +1,4 @@
-// The code is provided "as is" without any warranty and shit.
-// You are free to copy, use and redistribute the code in any way you wish.
-//
-// Evgeny Shevchenko
-// shvgn@protonmail.ch
-// 2015
-
+// Simple command line utility for the manipulation of columned ASCII data files
 package main
 
 import (
@@ -19,7 +13,7 @@ const (
 	OPERATION_DELIMITER string = "."
 )
 
-// Now spectool knows only nanometers and electron-volts
+// spectool knows only nanometers and electron-volts
 func isAnyKnownSuffix(s string) bool {
 	knownSuffixes := []string{".nm", ".ev"}
 	for _, sfx := range knownSuffixes {
@@ -60,7 +54,7 @@ func addPreSuffix(fname, newSfx string) string {
 	return subFname + newSfx + ext
 }
 
-// Adds per-pre-suffix to filename related to any operation made on the file
+// AddPrePreSuffix adds per-pre-suffix to filename related to any operation made on the file
 // addPrePreSuffix("data1.txt", "div(4.54)") == data1.div(4.54).txt
 // addPrePreSuffix("data1.nm", "div(4.54)") == data1.div(4.54).nm
 // addPrePreSuffix("data1.add(3).nm.txt", "div(4.54)") == data1.add(3).div(4.54).nm.txt
@@ -81,20 +75,20 @@ func AddPrePreSuffix(fname, newSfx string) string {
 	return subFname + newSfx + ext
 }
 
-// Add info about operation involving a spectrum in a file name
-func (sw *SpectrumWrapper) AddSpOpSuffix(op, fname string) {
+// AddSpOpSuffix adds info about operation involving a spectrum in a file name
+func (sw *Spectrum) AddSpOpSuffix(op, fname string) {
 	sfx := op + VALUE_BRACE_OPEN + fname + VALUE_BRACE_CLOSE
 	sw.fname = AddPrePreSuffix(sw.fname, sfx)
 }
 
-// Add info about operation involving a number in a file name
-func (sw *SpectrumWrapper) AddNumOpSuffix(op string, num float64) {
+// AddNumOpSuffix adds info about operation involving a number in a file name
+func (sw *Spectrum) AddNumOpSuffix(op string, num float64) {
 	sfx := fmt.Sprintf("%s%s%v%s", op, VALUE_BRACE_OPEN, num, VALUE_BRACE_CLOSE)
 	sw.fname = AddPrePreSuffix(sw.fname, sfx)
 }
 
-// Add info about operation involving a number in a file name
-func (sw *SpectrumWrapper) AddOpSuffix(op, s string) {
+// AddOpSuffix adds info about operation involving a number in a file name
+func (sw *Spectrum) AddOpSuffix(op, s string) {
 	sfx := fmt.Sprintf("%s%s%s%s", op, VALUE_BRACE_OPEN, s, VALUE_BRACE_CLOSE)
 	sw.fname = AddPrePreSuffix(sw.fname, sfx)
 }

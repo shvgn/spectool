@@ -1,9 +1,4 @@
-// You are free to copy, use and redistribute the code in any way you wish.
-//
-// Evgeny Shevchenko
-// shvgn@protonmail.ch
-// 2015
-
+// Simple command line utility for the manipulation of columned ASCII data files
 package main
 
 import (
@@ -104,8 +99,8 @@ func init() {
 
 func main() {
 
-	var spData []*SpectrumWrapper
-	var sw *SpectrumWrapper
+	var spData []*Spectrum
+	var sw *Spectrum
 	var err error
 	var files []string
 
@@ -199,7 +194,7 @@ func main() {
 	}
 
 	// Arithmetics operands
-	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *SpectrumWrapper
+	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *Spectrum
 	if addFlag != "" {
 		if addSpectrum, err = NewSpecWrapper(addFlag); err != nil {
 			log.Fatal(err)
