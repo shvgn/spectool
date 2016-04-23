@@ -10,7 +10,7 @@ package main
 import (
 	"fmt"
 
-	spectrum "github.com/shvgn/xy"
+	"github.com/shvgn/xy"
 )
 
 // A spectrum stats
@@ -26,7 +26,7 @@ func (st *Stats) String() string {
 		st.area, st.maxpos, st.maxheight, st.fwhm)
 }
 
-func stats(s *spectrum.Spectrum) *Stats {
+func stats(s *xy.XY) *Stats {
 	st := &Stats{}
 	st.area = s.Area()
 	st.maxpos, st.maxheight = s.MaxY()

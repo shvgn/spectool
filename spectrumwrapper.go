@@ -13,13 +13,13 @@ import (
 	"os"
 	"path/filepath"
 
-	spectrum "github.com/shvgn/xy"
+	"github.com/shvgn/xy"
 )
 
 // Type to handle data with its name. s is for the original data Spectrum, dir
 // stores the original directory of the file and fname is a new filename.
 type SpectrumWrapper struct {
-	s     *spectrum.Spectrum
+	s     *xy.XY
 	dir   string
 	fname string
 }
@@ -27,7 +27,7 @@ type SpectrumWrapper struct {
 // Get new SpecWrapper from a file containing data with optional column numbers
 // for Y alone or X and Y.
 func NewSpecWrapper(fpath string, cols ...int) (*SpectrumWrapper, error) {
-	s, err := spectrum.SpectrumFromFile(fpath, cols...)
+	s, err := xy.FromFile(fpath, cols...)
 	if err != nil {
 		return nil, err
 	}
