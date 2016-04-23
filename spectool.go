@@ -213,38 +213,25 @@ func main() {
 
 	}
 
-	// Arithmetics operands
+	// Operands fot dataset arithmetics
 	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *Spectrum
-	if addFlag != "" {
-		if addSpectrum, err = NewSpectrum(addFlag); err != nil {
-			log.Fatal(err)
-		}
-		if modifyUnits {
-			addSpectrum.xy.ModifyX(ensureUnitsFunc)
-		}
+	spectrumOperands := []struct {
+		spectrum *Spectrum
+		flag     string
+	}{
+		{addSpectrum, addFlag},
+		{subSpectrum, subFlag},
+		{mulSpectrum, mulFlag},
+		{divSpectrum, divFlag},
 	}
-	if subFlag != "" {
-		if subSpectrum, err = NewSpectrum(subFlag); err != nil {
+
+	for _, spectrumOperand := range spectrumOperands {
+		spectrumOperand.spectrum, err = NewSpectrum(spectrumOperand.flag)
+		if err != nil {
 			log.Fatal(err)
 		}
 		if modifyUnits {
-			subSpectrum.xy.ModifyX(ensureUnitsFunc)
-		}
-	}
-	if mulFlag != "" {
-		if mulSpectrum, err = NewSpectrum(mulFlag); err != nil {
-			log.Fatal(err)
-		}
-		if modifyUnits {
-			mulSpectrum.xy.ModifyX(ensureUnitsFunc)
-		}
-	}
-	if divFlag != "" {
-		if divSpectrum, err = NewSpectrum(divFlag); err != nil {
-			log.Fatal(err)
-		}
-		if modifyUnits {
-			divSpectrum.xy.ModifyX(ensureUnitsFunc)
+			spectrumOperand.spectrum.xy.ModifyX(ensureUnitsFunc)
 		}
 	}
 
