@@ -13,7 +13,7 @@ import (
 // Type to handle data with its name. s is for the original data Spectrum, dir
 // stores the original directory of the file and fname is a new filename.
 type Spectrum struct {
-	s     *xy.XY
+	xy    *xy.XY
 	dir   string
 	fname string
 }
@@ -26,7 +26,7 @@ func NewSpectrum(fpath string, cols ...int) (*Spectrum, error) {
 		return nil, err
 	}
 	dir, fname := filepath.Split(fpath)
-	sw := &Spectrum{s: s, fname: fname, dir: dir}
+	sw := &Spectrum{xy: s, fname: fname, dir: dir}
 	return sw, nil
 }
 
@@ -39,7 +39,7 @@ func (sw *Spectrum) String() string {
 	// 	buf.WriteString(fmt.Sprintf("Directory: %s\n", sw.dir))
 	// }
 	// buf.WriteString(fmt.Sprintf("Filename: %s\n", sw.fname))
-	buf.WriteString(sw.s.String())
+	buf.WriteString(sw.xy.String())
 	buf.WriteString("\n")
 	return buf.String()
 }

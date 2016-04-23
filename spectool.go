@@ -19,8 +19,8 @@ var (
 	keepEvFlag bool // Keep units in electron-volts
 	keepNmFlag bool // Keep units in nanometers
 
-	fromFlag float64 // Cut X from value
-	toFlag   float64 // Cut X up to value
+	xFrom float64 // Cut X from value
+	xTo   float64 // Cut X up to value
 
 	addNumFlag float64 // Add number
 	subNumFlag float64 // Subtract number
@@ -60,8 +60,8 @@ func init() {
 	flag.BoolVar(&keepNmFlag, "2nm", false, "Keep X in nanometers")
 
 	// X cutting options
-	flag.Float64Var(&fromFlag, "xfrom", math.Inf(-1), "X to start from")
-	flag.Float64Var(&toFlag, "xto", math.Inf(1), "X to end with")
+	flag.Float64Var(&xFrom, "xfrom", math.Inf(-1), "X to start from")
+	flag.Float64Var(&xTo, "xto", math.Inf(1), "X to end with")
 
 	// Spectra arithmetic operations with numbers
 	flag.Float64Var(&addNumFlag, "nadd", 0.0, "Add a number ")
@@ -106,37 +106,41 @@ func main() {
 		err       error
 	)
 
-	// Parse filenames. Those are considered to be files and globs
+	// Parse filenames. Those are considered to be paths or the parsing falls to globs
 	// in order to work in both Windows cmd and Unix shells
-	for _, arg := range flag.Args() {
-		if spectrum, err = NewSpectrum(arg, colXFlag, colYFlag); err != nil {
-			filePaths, err = filepath.Glob(arg)
+	for _, cmdArg := range flag.Args() {
+
+		// Parse from a file path
+		spectrum, err = NewSpectrum(cmdArg, colXFlag, colYFlag)
+		if err == nil {
+			spectra = append(spectra, spectrum)
+			continue
+		}
+
+		// Try a glob
+		filePaths, err = filepath.Glob(cmdArg)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		for _, filePath := range filePaths {
+			spectrum, err = NewSpectrum(filePath, colXFlag, colYFlag)
 			if err != nil {
-				// Not strict about invalid globs and paths
-				log.Println(err)
+				// Not strict about files parsing problems
+				log.Printf("%s: Parse error: %q. Skip.", filePath, err)
 				continue
 			}
-
-			for _, filePath := range filePaths { // arg is a valid glob pattern
-				spectrum, err = NewSpectrum(filePath, colXFlag, colYFlag)
-				if err != nil {
-					// Not strict about files parsing problems
-					log.Printf("%s: Parse error: %q. Skip.", filePath, err)
-					continue
-				}
-				spectra = append(spectra, spectrum)
-			}
-			continue // Appended files from the glob
+			spectra = append(spectra, spectrum)
 		}
-		spectra = append(spectra, spectrum) // arg is a valid filename
 	}
 
-	// Choosing units for the processing
-	// Forbid using -2ev and -2nm together. FIXME Why?
+	// Choose units for the processing and forbid using -2ev and -2nm together
 	if keepEvFlag && keepNmFlag {
 		log.Fatal("Cannot work on multiple X units simultaneously. Sorry.")
 	}
 	modifyUnits := keepEvFlag || keepNmFlag
+	// Assign a killer that will be redefined fot the converion of X units
 	ensureUnitsFunc := func(x float64) float64 {
 		if modifyUnits { // Something went wrong
 			log.Fatal("Unexpected units conversion")
@@ -145,6 +149,7 @@ func main() {
 		return x
 	}
 
+	// The string that will be added in the filename right before file extension
 	var unitsPreSuffix string
 	if keepEvFlag {
 		ensureUnitsFunc = ensureEv
@@ -156,7 +161,7 @@ func main() {
 	}
 
 	// Boundaries for cutting X from and to
-	if fromFlag > toFlag { // The X cutting flags are invalid
+	if xFrom > xTo { // The X cutting flags are invalid
 		log.Fatal("Invalid order of X cutting flags")
 	}
 
@@ -167,33 +172,41 @@ func main() {
 		checker2 float64
 	)
 
-	if !math.IsInf(fromFlag, -1) {
+	if !math.IsInf(xFrom, -1) {
 		cutLeft = true
-		checker1 = fromFlag
-		fromFlag = ensureUnitsFunc(fromFlag)
+		checker1 = xFrom
+		xFrom = ensureUnitsFunc(xFrom)
 	}
-	if !math.IsInf(toFlag, 1) {
+	if !math.IsInf(xTo, 1) {
 		cutRight = true
-		checker2 = toFlag
-		toFlag = ensureUnitsFunc(toFlag)
+		checker2 = xTo
+		xTo = ensureUnitsFunc(xTo)
 	}
 
-	if modifyUnits && (cutLeft || cutRight) { // Check the order of cut boundaries
+	if modifyUnits && (cutLeft || cutRight) {
+		// Check the order of cut boundaries
 		if cutLeft && cutRight {
-			if fromFlag > toFlag { // X order was reversed
-				fromFlag, toFlag = toFlag, fromFlag
-				cutLeft, cutRight = cutRight, cutLeft
+			if xFrom > xTo {
+				// X order was possibly reversed by the X conversion
+				xFrom, xTo = xTo, xFrom
 			}
-		} else { // Artificial checker required
+		} else {
+			// Artificial checker is required because in the case of one-sided cut
+			// we dont't have the second boundary to compare. Moreover, units conversion
+			// is not strict on the present units of X. Therefore, we don't know
+			// how to correspond passed cutting boundaries to boundaries of X
 			if cutLeft {
-				checker2 = checker1 + (math.Abs(checker1)+1)*rand.Float64() // checker2 > checker1
+				// Make checker2 > checker1
+				checker2 = checker1 + (math.Abs(checker1)+1)*rand.Float64()
 			}
 			if cutRight {
-				checker1 = checker2 - (math.Abs(checker2)+1)*rand.Float64() // checker1 < checker2
+				// Make checker1 < checker2
+				checker1 = checker2 - (math.Abs(checker2)+1)*rand.Float64()
 			}
 			newChecker1, newChecker2 := ensureUnitsFunc(checker1), ensureUnitsFunc(checker2)
-			if newChecker1 > newChecker2 { // Modified X has reversed order
-				fromFlag, toFlag = toFlag, fromFlag
+			if newChecker1 > newChecker2 {
+				// Modified X has reversed order
+				xFrom, xTo = xTo, xFrom
 				cutLeft, cutRight = cutRight, cutLeft
 			}
 		}
@@ -207,7 +220,7 @@ func main() {
 			log.Fatal(err)
 		}
 		if modifyUnits {
-			addSpectrum.s.ModifyX(ensureUnitsFunc)
+			addSpectrum.xy.ModifyX(ensureUnitsFunc)
 		}
 	}
 	if subFlag != "" {
@@ -215,7 +228,7 @@ func main() {
 			log.Fatal(err)
 		}
 		if modifyUnits {
-			subSpectrum.s.ModifyX(ensureUnitsFunc)
+			subSpectrum.xy.ModifyX(ensureUnitsFunc)
 		}
 	}
 	if mulFlag != "" {
@@ -223,7 +236,7 @@ func main() {
 			log.Fatal(err)
 		}
 		if modifyUnits {
-			mulSpectrum.s.ModifyX(ensureUnitsFunc)
+			mulSpectrum.xy.ModifyX(ensureUnitsFunc)
 		}
 	}
 	if divFlag != "" {
@@ -231,29 +244,29 @@ func main() {
 			log.Fatal(err)
 		}
 		if modifyUnits {
-			divSpectrum.s.ModifyX(ensureUnitsFunc)
+			divSpectrum.xy.ModifyX(ensureUnitsFunc)
 		}
 	}
 
 	// Processing
 	l := len(spectra)
-	for i, sw := range spectra {
+	for i, spectrum := range spectra {
 		if verboseFlag && l > 1 {
-			fmt.Println(fmt.Sprintf("%d/%d  ", i+1, l) + sw.dir + sw.fname)
+			fmt.Println(fmt.Sprintf("%d/%d  ", i+1, l) + spectrum.dir + spectrum.fname)
 		}
 
 		// Subtract the noise from the full-length signal
 		if noiseFlag {
-			n := sw.s.Noise()
+			n := spectrum.xy.Noise()
 			opMessage("-", fmt.Sprintf("%s (noise)", humanize.Ftoa(n)))
-			sw.s.ModifyY(func(y float64) float64 { return y - n })
-			sw.AddOpSuffix("noise", humanize.Ftoa(n))
+			spectrum.xy.ModifyY(func(y float64) float64 { return y - n })
+			spectrum.AddOpSuffix("noise", humanize.Ftoa(n))
 		}
 
 		// Process the X units
 		if modifyUnits {
-			sw.s.ModifyX(ensureUnitsFunc)
-			sw.fname = addPreSuffix(sw.fname, unitsPreSuffix)
+			spectrum.xy.ModifyX(ensureUnitsFunc)
+			spectrum.fname = addPreSuffix(spectrum.fname, unitsPreSuffix)
 		}
 
 		/*
@@ -262,25 +275,25 @@ func main() {
 		*/
 		cutFmt := "%s,%s"
 		if cutLeft && cutRight {
-			opMessage(">", humanize.Ftoa(fromFlag))
-			opMessage("<", humanize.Ftoa(toFlag))
-			sw.s.Cut(fromFlag, toFlag)
-			sw.AddOpSuffix("x", fmt.Sprintf(cutFmt, humanize.Ftoa(fromFlag), humanize.Ftoa(toFlag)))
+			opMessage(">", humanize.Ftoa(xFrom))
+			opMessage("<", humanize.Ftoa(xTo))
+			spectrum.xy.Cut(xFrom, xTo)
+			spectrum.AddOpSuffix("x", fmt.Sprintf(cutFmt, humanize.Ftoa(xFrom), humanize.Ftoa(xTo)))
 			// sw.AddOpSuffix("from", humanize.Ftoa(fromFlag))
 			// sw.AddOpSuffix("to", humanize.Ftoa(toFlag))
 		} else {
 			if cutLeft {
-				opMessage(">", fmt.Sprintf("%v", humanize.Ftoa(fromFlag)))
-				xLast, _ := sw.s.LastPoint()
-				sw.s.Cut(fromFlag, xLast)
-				sw.AddOpSuffix("x", fmt.Sprintf(cutFmt, humanize.Ftoa(fromFlag), ""))
+				opMessage(">", fmt.Sprintf("%v", humanize.Ftoa(xFrom)))
+				xLast, _ := spectrum.xy.LastPoint()
+				spectrum.xy.Cut(xFrom, xLast)
+				spectrum.AddOpSuffix("x", fmt.Sprintf(cutFmt, humanize.Ftoa(xFrom), ""))
 				// sw.AddOpSuffix("from", humanize.Ftoa(fromFlag))
 			}
 			if cutRight {
-				opMessage("<", fmt.Sprintf("%v", humanize.Ftoa(toFlag)))
-				xFirst, _ := sw.s.FirstPoint()
-				sw.s.Cut(xFirst, toFlag)
-				sw.AddOpSuffix("x", fmt.Sprintf(cutFmt, "", humanize.Ftoa(toFlag)))
+				opMessage("<", fmt.Sprintf("%v", humanize.Ftoa(xTo)))
+				xFirst, _ := spectrum.xy.FirstPoint()
+				spectrum.xy.Cut(xFirst, xTo)
+				spectrum.AddOpSuffix("x", fmt.Sprintf(cutFmt, "", humanize.Ftoa(xTo)))
 				// sw.AddOpSuffix("to", humanize.Ftoa(toFlag))
 			}
 		}
@@ -290,25 +303,25 @@ func main() {
 			Addition and subtracting of spectra should be done before noise calculation?
 		*/
 		if addFlag != "" {
-			sw.s.Add(addSpectrum.s)
+			spectrum.xy.Add(addSpectrum.xy)
 			opMessage("+", addSpectrum.fname)
-			sw.AddSpOpSuffix("add", addSpectrum.fname)
+			spectrum.AddSpOpSuffix("add", addSpectrum.fname)
 		}
 		if subFlag != "" {
-			sw.s.Subtract(subSpectrum.s)
+			spectrum.xy.Subtract(subSpectrum.xy)
 			opMessage("-", subSpectrum.fname)
-			sw.AddSpOpSuffix("sub", subSpectrum.fname)
+			spectrum.AddSpOpSuffix("sub", subSpectrum.fname)
 		}
 
 		if mulFlag != "" {
 			opMessage("*", mulSpectrum.fname)
-			sw.s.Multiply(mulSpectrum.s)
-			sw.AddSpOpSuffix("mul", mulSpectrum.fname)
+			spectrum.xy.Multiply(mulSpectrum.xy)
+			spectrum.AddSpOpSuffix("mul", mulSpectrum.fname)
 		}
 		if divFlag != "" {
-			sw.s.Divide(divSpectrum.s)
+			spectrum.xy.Divide(divSpectrum.xy)
 			opMessage("/", divSpectrum.fname)
-			sw.AddSpOpSuffix("div", divSpectrum.fname)
+			spectrum.AddSpOpSuffix("div", divSpectrum.fname)
 		}
 
 		/*
@@ -316,23 +329,23 @@ func main() {
 		*/
 		if addNumFlag != 0.0 {
 			opMessage("+", fmt.Sprintf("%v", addNumFlag))
-			sw.s.ModifyY(func(y float64) float64 { return y + addNumFlag })
-			sw.AddNumOpSuffix("add", addNumFlag)
+			spectrum.xy.ModifyY(func(y float64) float64 { return y + addNumFlag })
+			spectrum.AddNumOpSuffix("add", addNumFlag)
 		}
 		if subNumFlag != 0.0 {
 			opMessage("-", fmt.Sprintf("%v", subNumFlag))
-			sw.s.ModifyY(func(y float64) float64 { return y - subNumFlag })
-			sw.AddNumOpSuffix("sub", subNumFlag)
+			spectrum.xy.ModifyY(func(y float64) float64 { return y - subNumFlag })
+			spectrum.AddNumOpSuffix("sub", subNumFlag)
 		}
 		if mulNumFlag != 1.0 {
 			opMessage("*", fmt.Sprintf("%v", mulNumFlag))
-			sw.s.ModifyY(func(y float64) float64 { return y * mulNumFlag })
-			sw.AddNumOpSuffix("mul", mulNumFlag)
+			spectrum.xy.ModifyY(func(y float64) float64 { return y * mulNumFlag })
+			spectrum.AddNumOpSuffix("mul", mulNumFlag)
 		}
 		if divNumFlag != 1.0 {
 			opMessage("/", fmt.Sprintf("%v", divNumFlag))
-			sw.s.ModifyY(func(y float64) float64 { return y / divNumFlag })
-			sw.AddNumOpSuffix("div", divNumFlag)
+			spectrum.xy.ModifyY(func(y float64) float64 { return y / divNumFlag })
+			spectrum.AddNumOpSuffix("div", divNumFlag)
 		}
 
 		// if smoothFlag != "" {
