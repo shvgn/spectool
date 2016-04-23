@@ -53,8 +53,8 @@ func opMessage(op, value string) {
 
 func init() {
 	/*
-	************** Modificating flags **************
-	 */
+	 Modificating flags
+	*/
 	// X Units
 	flag.BoolVar(&keepEvFlag, "2ev", false, "Keep X in electron-volts")
 	flag.BoolVar(&keepNmFlag, "2nm", false, "Keep X in nanometers")
@@ -83,8 +83,8 @@ func init() {
 	// 	"[ws,po]\t(Not implemented) Smooth data with optionally specified both window size and polynome order")
 
 	/*
-	************** Non-modificating flags **************
-	 */
+	 Non-modificating flags
+	*/
 	// flag.BoolVar(&statsFlag, "s", false, "(Not implemented) Collect statistics on the data")
 	flag.IntVar(&colXFlag, "colx", 1, "Set number of the X column in passed data files")
 	flag.IntVar(&colYFlag, "coly", 2, "Set number of the Y column in passed data ASCII files")
@@ -99,10 +99,12 @@ func init() {
 
 func main() {
 
-	var spData []*Spectrum
-	var sw *Spectrum
-	var err error
-	var files []string
+	var (
+		spectra   []*Spectrum
+		spectrum  *Spectrum
+		filePaths []string
+		err       error
+	)
 
 	/*
 		Parsing filenames from passed strings. Those are considered to be files and globs
@@ -110,22 +112,22 @@ func main() {
 	*/
 
 	for _, arg := range flag.Args() { // Remaining arguments are filepaths or globs to process
-		if sw, err = NewSpecWrapper(arg, colXFlag, colYFlag); err != nil {
-			if files, err = filepath.Glob(arg); err != nil {
+		if spectrum, err = NewSpectrum(arg, colXFlag, colYFlag); err != nil {
+			if filePaths, err = filepath.Glob(arg); err != nil {
 				log.Println(err)
 				continue
 			}
-			for _, f := range files { // arg is a valid glob pattern
-				sw, err = NewSpecWrapper(f, colXFlag, colYFlag)
+			for _, f := range filePaths { // arg is a valid glob pattern
+				spectrum, err = NewSpectrum(f, colXFlag, colYFlag)
 				if err != nil {
 					log.Println(f+": Parse error:", err, "Skipping.")
 					continue
 				}
-				spData = append(spData, sw)
+				spectra = append(spectra, spectrum)
 			}
 			continue // Appended files from the glob
 		}
-		spData = append(spData, sw) // arg is a valid filename
+		spectra = append(spectra, spectrum) // arg is a valid filename
 	}
 
 	// Choosing units for the processing
@@ -196,7 +198,7 @@ func main() {
 	// Arithmetics operands
 	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *Spectrum
 	if addFlag != "" {
-		if addSpectrum, err = NewSpecWrapper(addFlag); err != nil {
+		if addSpectrum, err = NewSpectrum(addFlag); err != nil {
 			log.Fatal(err)
 		}
 		if modifyUnits {
@@ -204,7 +206,7 @@ func main() {
 		}
 	}
 	if subFlag != "" {
-		if subSpectrum, err = NewSpecWrapper(subFlag); err != nil {
+		if subSpectrum, err = NewSpectrum(subFlag); err != nil {
 			log.Fatal(err)
 		}
 		if modifyUnits {
@@ -212,7 +214,7 @@ func main() {
 		}
 	}
 	if mulFlag != "" {
-		if mulSpectrum, err = NewSpecWrapper(mulFlag); err != nil {
+		if mulSpectrum, err = NewSpectrum(mulFlag); err != nil {
 			log.Fatal(err)
 		}
 		if modifyUnits {
@@ -220,7 +222,7 @@ func main() {
 		}
 	}
 	if divFlag != "" {
-		if divSpectrum, err = NewSpecWrapper(divFlag); err != nil {
+		if divSpectrum, err = NewSpectrum(divFlag); err != nil {
 			log.Fatal(err)
 		}
 		if modifyUnits {
@@ -229,8 +231,8 @@ func main() {
 	}
 
 	// Processing
-	l := len(spData)
-	for i, sw := range spData {
+	l := len(spectra)
+	for i, sw := range spectra {
 		if verboseFlag && l > 1 {
 			fmt.Println(fmt.Sprintf("%d/%d  ", i+1, l) + sw.dir + sw.fname)
 		}
@@ -356,7 +358,7 @@ func main() {
 	// 	outFmtFlag = "ascii"
 	// }
 
-	for _, sw := range spData {
+	for _, sw := range spectra {
 		var path string
 		var perm os.FileMode = 0644 // FIXME Why use something else?
 

@@ -20,7 +20,7 @@ type Spectrum struct {
 
 // Get new SpecWrapper from a file containing data with optional column numbers
 // for Y alone or X and Y.
-func NewSpecWrapper(fpath string, cols ...int) (*Spectrum, error) {
+func NewSpectrum(fpath string, cols ...int) (*Spectrum, error) {
 	s, err := xy.FromFile(fpath, cols...)
 	if err != nil {
 		return nil, err
