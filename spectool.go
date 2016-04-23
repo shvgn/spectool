@@ -106,21 +106,22 @@ func main() {
 		err       error
 	)
 
-	/*
-		Parsing filenames from passed strings. Those are considered to be files and globs
-		in order to work in both Windows cmd and Unix shells
-	*/
-
-	for _, arg := range flag.Args() { // Remaining arguments are filepaths or globs to process
+	// Parse filenames. Those are considered to be files and globs
+	// in order to work in both Windows cmd and Unix shells
+	for _, arg := range flag.Args() {
 		if spectrum, err = NewSpectrum(arg, colXFlag, colYFlag); err != nil {
-			if filePaths, err = filepath.Glob(arg); err != nil {
+			filePaths, err = filepath.Glob(arg)
+			if err != nil {
+				// Not strict about invalid globs and paths
 				log.Println(err)
 				continue
 			}
-			for _, f := range filePaths { // arg is a valid glob pattern
-				spectrum, err = NewSpectrum(f, colXFlag, colYFlag)
+
+			for _, filePath := range filePaths { // arg is a valid glob pattern
+				spectrum, err = NewSpectrum(filePath, colXFlag, colYFlag)
 				if err != nil {
-					log.Println(f+": Parse error:", err, "Skipping.")
+					// Not strict about files parsing problems
+					log.Printf("%s: Parse error: %q. Skip.", filePath, err)
 					continue
 				}
 				spectra = append(spectra, spectrum)
@@ -159,8 +160,12 @@ func main() {
 		log.Fatal("Invalid order of X cutting flags")
 	}
 
-	var cutLeft, cutRight bool
-	var checker1, checker2 float64 // We want not to mess with the order of cutting values
+	var (
+		cutLeft  bool
+		cutRight bool
+		checker1 float64 // We want not to mess with the order of cutting values
+		checker2 float64
+	)
 
 	if !math.IsInf(fromFlag, -1) {
 		cutLeft = true
@@ -358,18 +363,18 @@ func main() {
 	// 	outFmtFlag = "ascii"
 	// }
 
-	for _, sw := range spectra {
+	for _, spectrum := range spectra {
 		var path string
 		var perm os.FileMode = 0644 // FIXME Why use something else?
 
 		if outDirFlag != "" {
-			path = filepath.Join(outDirFlag, sw.fname)
+			path = filepath.Join(outDirFlag, spectrum.fname)
 		} else {
-			path = filepath.Join(sw.dir, sw.fname)
+			path = filepath.Join(spectrum.dir, spectrum.fname)
 		}
 
 		// err := sw.WriteFile(path, outFmtFlag, perm)
-		err := sw.WriteFile(path, "ascii", perm)
+		err := spectrum.WriteFile(path, "ascii", perm)
 		if err != nil {
 			log.Fatal(err)
 		}
