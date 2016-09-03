@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	VALUE_BRACE_OPEN    string = "["
-	VALUE_BRACE_CLOSE   string = "]"
-	OPERATION_DELIMITER string = "."
+	valueBraceOpen     string = "["
+	valueBraceClose    string = "]"
+	operationDelimiter string = "."
 )
 
 // spectool knows only nanometers and electron-volts
@@ -24,14 +24,15 @@ func isAnyKnownSuffix(s string) bool {
 	return false
 }
 
-// Adds pre-suffix or extension to filename or changes the existing one
+// addPreSuffix adds pre-suffix or extension to filename or changes the existing one
+// For example:
 // addPreSuffix("data1.txt", "ev") == data1.ev.txt
 // addPreSuffix("data1.nm", "ev") == data1.ev
 // addPreSuffix("data1.nm.txt", "ev") == data1.ev.txt
 func addPreSuffix(fname, newSfx string) string {
-	newSfx = OPERATION_DELIMITER + newSfx
+	newSfx = operationDelimiter + newSfx
 	ext := filepath.Ext(fname) // Extension with dot
-	if strings.IndexAny(ext, VALUE_BRACE_CLOSE) >= 0 {
+	if strings.IndexAny(ext, valueBraceClose) >= 0 {
 		return fname + newSfx
 	}
 	subFname := strings.TrimSuffix(fname, ext)
@@ -46,7 +47,7 @@ func addPreSuffix(fname, newSfx string) string {
 		if sfx == newSfx {
 			return fname
 		}
-		if strings.IndexAny(sfx, VALUE_BRACE_CLOSE) >= 0 {
+		if strings.IndexAny(sfx, valueBraceClose) >= 0 {
 			return subFname + newSfx + ext
 		}
 		return strings.TrimSuffix(subFname, sfx) + newSfx + ext
@@ -55,13 +56,14 @@ func addPreSuffix(fname, newSfx string) string {
 }
 
 // AddPrePreSuffix adds per-pre-suffix to filename related to any operation made on the file
+// For example:
 // addPrePreSuffix("data1.txt", "div(4.54)") == data1.div(4.54).txt
 // addPrePreSuffix("data1.nm", "div(4.54)") == data1.div(4.54).nm
 // addPrePreSuffix("data1.add(3).nm.txt", "div(4.54)") == data1.add(3).div(4.54).nm.txt
 func AddPrePreSuffix(fname, newSfx string) string {
 	newSfx = "." + newSfx
 	ext := filepath.Ext(fname)
-	if strings.IndexAny(ext, VALUE_BRACE_CLOSE) >= 0 {
+	if strings.IndexAny(ext, valueBraceClose) >= 0 {
 		return fname + newSfx
 	}
 	subFname := strings.TrimSuffix(fname, ext)
@@ -76,19 +78,19 @@ func AddPrePreSuffix(fname, newSfx string) string {
 }
 
 // AddSpOpSuffix adds info about operation involving a spectrum in a file name
-func (sw *Spectrum) AddSpOpSuffix(op, fname string) {
-	sfx := op + VALUE_BRACE_OPEN + fname + VALUE_BRACE_CLOSE
-	sw.fname = AddPrePreSuffix(sw.fname, sfx)
+func (s *Spectrum) AddSpOpSuffix(op, fname string) {
+	sfx := op + valueBraceOpen + fname + valueBraceClose
+	s.fname = AddPrePreSuffix(s.fname, sfx)
 }
 
 // AddNumOpSuffix adds info about operation involving a number in a file name
-func (sw *Spectrum) AddNumOpSuffix(op string, num float64) {
-	sfx := fmt.Sprintf("%s%s%v%s", op, VALUE_BRACE_OPEN, num, VALUE_BRACE_CLOSE)
-	sw.fname = AddPrePreSuffix(sw.fname, sfx)
+func (s *Spectrum) AddNumOpSuffix(op string, num float64) {
+	sfx := fmt.Sprintf("%s%s%v%s", op, valueBraceOpen, num, valueBraceClose)
+	s.fname = AddPrePreSuffix(s.fname, sfx)
 }
 
 // AddOpSuffix adds info about operation involving a number in a file name
-func (sw *Spectrum) AddOpSuffix(op, s string) {
-	sfx := fmt.Sprintf("%s%s%s%s", op, VALUE_BRACE_OPEN, s, VALUE_BRACE_CLOSE)
-	sw.fname = AddPrePreSuffix(sw.fname, sfx)
+func (s *Spectrum) AddOpSuffix(op, val string) {
+	sfx := fmt.Sprintf("%s%s%s%s", op, valueBraceOpen, val, valueBraceClose)
+	s.fname = AddPrePreSuffix(s.fname, sfx)
 }

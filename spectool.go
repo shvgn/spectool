@@ -213,7 +213,7 @@ func main() {
 
 	}
 
-	// Operands fot dataset arithmetics
+	// Operands for dataset arithmetics
 	var addSpectrum, subSpectrum, mulSpectrum, divSpectrum *Spectrum
 	spectrumOperands := []struct {
 		spectrum *Spectrum

@@ -7,7 +7,9 @@ import (
 	"github.com/shvgn/xy"
 )
 
-// A spectrum stats
+// Stats represents spectrum properties: area under the curve,
+// the position of the maximum point and its height, and full with at half-maximum
+// regardless of how many peaks are in the spectrum
 type Stats struct {
 	area      float64
 	maxpos    float64
@@ -20,11 +22,11 @@ func (st *Stats) String() string {
 		st.area, st.maxpos, st.maxheight, st.fwhm)
 }
 
-func stats(s *xy.XY) *Stats {
+func stats(data *xy.XY) *Stats {
 	st := &Stats{}
-	st.area = s.Area()
-	st.maxpos, st.maxheight = s.MaxY()
-	st.fwhm = s.FWHM(st.maxpos)
+	st.area = data.Area()
+	st.maxpos, st.maxheight = data.MaxY()
+	st.fwhm = data.FWHM(st.maxpos)
 	// notImplemented() // FIXME
 	return st
 }
