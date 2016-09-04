@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	verboseFlag bool // Verbosity of the output
+	verboseFlag     bool // Verbosity of the output
+	showVersionFlag bool // Verbosity of the output
 
 	keepEvFlag bool // Keep units in electron-volts
 	keepNmFlag bool // Keep units in nanometers
@@ -43,6 +44,8 @@ var (
 	// outFmtFlag string // Ouput format
 	outDirFlag string // Ouput directory for resulting spectra
 )
+
+const version string = "1.0beta2"
 
 // Message on an arithmetic operation
 func opMessage(op, value string) {
@@ -93,6 +96,7 @@ func init() {
 	flag.StringVar(&outDirFlag, "od", "", "Directory for output files")
 
 	flag.BoolVar(&verboseFlag, "v", false, "Verbose the actions")
+	flag.BoolVar(&showVersionFlag, "ver", false, "Show spectool version")
 
 	flag.Parse()
 }
@@ -106,19 +110,28 @@ func main() {
 		err       error
 	)
 
+	if showVersionFlag {
+		fmt.Println(version)
+	}
+
 	// Parse filenames. Those are considered to be paths or the parsing falls to globs
 	// in order to work in both Windows cmd and Unix shells
-	for _, cmdArg := range flag.Args() {
+	fileNames := flag.Args()
+	if len(fileNames) == 0 {
+		os.Exit(0)
+	}
+
+	for _, fileName := range fileNames {
 
 		// Parse from a file path
-		spectrum, err = NewSpectrum(cmdArg, colXFlag, colYFlag)
+		spectrum, err = NewSpectrum(fileName, colXFlag, colYFlag)
 		if err == nil {
 			spectra = append(spectra, spectrum)
 			continue
 		}
 
 		// Try a glob
-		filePaths, err = filepath.Glob(cmdArg)
+		filePaths, err = filepath.Glob(fileName)
 		if err != nil {
 			log.Println(err)
 			continue
