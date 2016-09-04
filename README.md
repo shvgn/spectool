@@ -1,5 +1,6 @@
 spectool
 ========
+[![GoDoc](https://godoc.org/github.com/shvgn/spectool?status.svg)](https://godoc.org/github.com/shvgn/spectool)
 
 Simple command line tool for processing ASCII files with columns of numeric data. Spectool features some capabilities for spectroscopic data (optical in particular) though it is useful for some basic arithmetic processing of arbitrary data. The goal is time saving before building plots in GUI software which usually require too much clicks. It is can be downloaded as binary files for Linux, OS X and Windows. The interface and code are not quite polished yet.
 
