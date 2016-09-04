@@ -21,10 +21,11 @@ func (st *Stats) String() string {
 		st.area, st.maxpos, st.maxheight, st.fwhm)
 }
 
+// stats calculates all the properties
 func stats(data *xy.XY) *Stats {
 	st := &Stats{}
 	st.area = data.Area()
-	st.maxpos, st.maxheight = data.MaxY()
+	st.maxpos, st.maxheight, _ = data.Max()
 	st.fwhm = data.FWHM(st.maxpos)
 	// notImplemented() // FIXME
 	return st
