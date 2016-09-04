@@ -15,7 +15,7 @@ import (
 
 var (
 	verboseFlag     bool // Verbosity of the output
-	showVersionFlag bool // Verbosity of the output
+	showVersionFlag bool // Show version and exit
 
 	keepEvFlag bool // Keep units in electron-volts
 	keepNmFlag bool // Keep units in nanometers
@@ -45,7 +45,7 @@ var (
 	outDirFlag string // Ouput directory for resulting spectra
 )
 
-const version string = "1.0beta2"
+const version string = "1.0beta3"
 
 // Message on an arithmetic operation
 func opMessage(op, value string) {
@@ -112,15 +112,16 @@ func main() {
 
 	if showVersionFlag {
 		fmt.Println(version)
+		os.Exit(0)
 	}
 
-	// Parse filenames. Those are considered to be paths or the parsing falls to globs
-	// in order to work in both Windows cmd and Unix shells
 	fileNames := flag.Args()
 	if len(fileNames) == 0 {
 		os.Exit(0)
 	}
 
+	// Parse filenames. Those are considered to be paths or the parsing falls to globs
+	// in order to work in both Windows cmd and Unix shells
 	for _, fileName := range fileNames {
 
 		// Parse from a file path
