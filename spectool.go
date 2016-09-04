@@ -1,4 +1,4 @@
-// Simple command line utility for the manipulation of columned ASCII data files
+// Simple command line utility for the manipulation of columned ASCII X,Y data files
 package main
 
 import (
